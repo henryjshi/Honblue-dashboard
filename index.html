@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HONBLUE Sales Intelligence</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -202,6 +203,12 @@
       <span class="ct-sep">vs</span>
       <span class="ct-b" id="h-year-b">2025</span>
     </span>
+    <span id="data-badge" style="display:none;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;"></span>
+    <label for="xlsx-upload" title="Upload a new Sales by Account .xlsx to refresh all data" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;color:var(--muted);cursor:pointer;transition:color 0.15s,border-color 0.15s;user-select:none;" onmouseover="this.style.color='var(--text)';this.style.borderColor='rgba(255,255,255,0.22)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='rgba(255,255,255,0.14)'">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M3.5 4L6.5 1l3 3M1 10.5h11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Refresh Data
+    </label>
+    <input type="file" id="xlsx-upload" accept=".xlsx" style="display:none" onchange="handleFileUpload(this)">
   </div>
 </div>
 
@@ -1205,9 +1212,157 @@ function initAuth() {
   }
 }
 
+// ─── DATA UPLOAD ─────────────────────────────────────────────────────────────
+// Maps every raw Industry value in the NAV sheet to a dashboard segment
+const INDUSTRY_SEG_MAP = {
+  // AEC
+  'Architect Firm':'AEC','General Contractor':'AEC','Subcontractor':'AEC',
+  'Engineering Firm-Multi Discipline':'AEC','Engineering Firm-Other':'AEC',
+  'Engineering Firm-Civil':'AEC','Engineering Firm-Structural':'AEC',
+  'Engineering Firm-Mechanical':'AEC','Engineering Firm-Electrical':'AEC',
+  'Construction Manager':'AEC','Landscape Architect':'AEC','Interior Design':'AEC',
+  'Planners':'AEC','Reprographics':'AEC','Facilities':'AEC',
+  // Hospitality
+  'Hotels/Resorts':'Hospitality','Travel/Airline/Destination Management':'Hospitality',
+  'Leisure':'Hospitality','Entertainment/Theatre/Promoters/Musicians':'Hospitality',
+  'Clubs/Organizations/Professional Associations':'Hospitality',
+  // Retail
+  'Retail/Furniture/Car Dealerships':'Retail',
+  // Real Estate
+  'Developers':'Real Estate','Property Management/Condo Associations':'Real Estate',
+  'Real Estate - Residential':'Real Estate','Real Estate - Commercial':'Real Estate',
+  'Real Estate Commercial':'Real Estate','Real Estate Residential':'Real Estate',
+  'Large Land Owner':'Real Estate','Appraiser':'Real Estate',
+  // Food & Beverage
+  'Food':'Food & Beverage','Restaurant':'Food & Beverage',
+  // Financial Services
+  'Financial Institutions':'Financial Services',
+  // Government
+  'State Agency':'Government','City and County Agency':'Government',
+  'Federal Agency':'Government','Military Agency':'Government',
+  // Nonprofit
+  'Nonprofit':'Nonprofit','Religious':'Nonprofit',
+  // Healthcare
+  'Medical/Healthcare':'Healthcare',
+  // Education
+  'Education':'Education',
+};
+function industryToSeg(ind) { return INDUSTRY_SEG_MAP[ind] || 'Other'; }
+
+function handleFileUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  // Reset so the same file can be re-uploaded
+  input.value = '';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type:'array' });
+
+      // Find the right sheet — prefer one with 'NAV' or 'Account' in the name
+      const sheetName = wb.SheetNames.find(n =>
+        n.toLowerCase().includes('nav') || n.toLowerCase().includes('account')
+      ) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+
+      // Read as array-of-arrays to handle the duplicate 2023 column safely
+      const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+      if(raw.length < 2) { showToast('No rows found in sheet: ' + sheetName, true); return; }
+
+      const headers = raw[0].map(h => String(h).trim());
+
+      // Locate columns by header name (flexible — survives minor renames)
+      const ci = {
+        name:     headers.findIndex(h => h.toLowerCase().includes('customer name') || h === 'Name'),
+        industry: headers.findIndex(h => h === 'Industry'),
+        rep:      headers.findIndex(h => h.toLowerCase().includes('crm') || h.toLowerCase() === 'rep'),
+      };
+
+      // Find year columns — use FIRST occurrence of each year (handles duplicate 2023)
+      const yearCols = {};
+      headers.forEach((h, i) => {
+        // Numeric header like 2019 or text like "2026 (Partial 3/30)"
+        const yr = parseInt(h);
+        if(yr >= 2019 && yr <= 2026 && !yearCols[yr]) yearCols[yr] = i;
+      });
+
+      if(ci.name < 0) { showToast('Could not find "Customer Name" column.', true); return; }
+
+      const parsed = raw.slice(1).map(row => {
+        const name = String(row[ci.name] || '').trim();
+        if(!name) return null;
+        const industry = String(row[ci.industry] ?? '');
+        const rep = String(row[ci.rep] ?? '');
+        const acct = { name, industry, rep, segment: industryToSeg(industry) };
+        [2019,2020,2021,2022,2023,2024,2025,2026].forEach(y => {
+          acct['y'+y] = yearCols[y] !== undefined ? (parseFloat(row[yearCols[y]]) || 0) : 0;
+        });
+        return acct;
+      }).filter(Boolean);
+
+      if(parsed.length < 100) { showToast(`Only ${parsed.length} rows found — is this the right sheet?`, true); return; }
+
+      // Update the live ACCOUNTS array in-place (works with both const and let declarations)
+      ACCOUNTS.splice(0, ACCOUNTS.length, ...parsed);
+
+      // Persist so the data survives page refreshes
+      const ts = file.name.replace('.xlsx','');
+      try {
+        localStorage.setItem('hb_accounts', JSON.stringify(parsed));
+        localStorage.setItem('hb_accounts_src', ts);
+      } catch(storErr) { /* localStorage full — data lives in-memory for this session */ }
+
+      updateDataBadge(ts);
+      refreshAll();
+      showToast(`✓ ${parsed.length.toLocaleString()} accounts loaded from ${file.name}`);
+    } catch(err) {
+      showToast('Parse error: ' + err.message, true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateDataBadge(src) {
+  const b = document.getElementById('data-badge');
+  if(!b) return;
+  b.textContent = '⬤ ' + src;
+  b.title = 'Data loaded from: ' + src;
+  b.style.display = '';
+}
+
+function showToast(msg, isError=false) {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:22px;right:22px;z-index:99999;padding:11px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;pointer-events:none;opacity:0;transition:opacity 0.25s;background:${isError?'#f87171':'#4ade80'};color:#0f0f1a;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,0.4);`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; });
+  setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => t.remove(), 300);
+  }, isError ? 5000 : 3500);
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 initYearPills();
 initAuth();
+
+// Restore previously uploaded data from localStorage (survives page refresh)
+(function restoreUploadedData() {
+  try {
+    const stored = localStorage.getItem('hb_accounts');
+    const src    = localStorage.getItem('hb_accounts_src');
+    if(stored) {
+      const parsed = JSON.parse(stored);
+      if(parsed && parsed.length > 100) {
+        ACCOUNTS.splice(0, ACCOUNTS.length, ...parsed);
+        updateDataBadge(src || 'cached data');
+      }
+    }
+  } catch(e) { /* ignore corrupt cache */ }
+})();
+
 renderOverview();
 </script>
 </body>
