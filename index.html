@@ -146,9 +146,47 @@
 
   /* NOTICE BANNER */
   .notice { display: flex; align-items: center; gap: 8px; background: rgba(255,206,2,0.08); border: 1px solid rgba(255,206,2,0.2); border-radius: var(--radius); padding: 8px 12px; font-size: 12px; color: var(--warn); margin-bottom: 14px; }
+
+  /* LOCK SCREEN */
+  .lock-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  .lock-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 32px; width: 340px; }
+  .lock-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .lock-form-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .lock-form-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  .lock-input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-size: 13px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; margin-bottom: 10px; box-sizing: border-box; }
+  .lock-input:focus { outline: none; border-color: var(--red); }
+  .lock-btn { width: 100%; background: var(--red); border: none; border-radius: var(--radius); color: white; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; letter-spacing: 0.02em; transition: opacity 0.15s; }
+  .lock-btn:hover { opacity: 0.88; }
+  .lock-error { font-size: 12px; color: var(--bad); margin-top: 8px; display: none; }
+
+  /* TABS */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 14px; }
+  .tab-btn { padding: 6px 14px; border-radius: 100px; background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { background: rgba(225,43,39,0.15); border-color: rgba(225,43,39,0.3); color: var(--red); }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--text); }
 </style>
 </head>
 <body>
+
+<!-- LOCK SCREEN -->
+<div id="lock-overlay" class="lock-overlay">
+  <div class="lock-card">
+    <div class="lock-logo">
+      <div class="logo-mark">HB</div>
+      <div>
+        <span class="logo-text">HONBLUE</span>
+        <span class="logo-sub">Sales Intelligence</span>
+      </div>
+    </div>
+    <div class="lock-form-title">Enter password to continue</div>
+    <div class="lock-form-sub">This dashboard contains confidential sales data.<br>Access is restricted to authorized team members.</div>
+    <input type="password" class="lock-input" id="lock-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPassword()">
+    <button class="lock-btn" onclick="checkPassword()">Unlock Dashboard</button>
+    <div class="lock-error" id="lock-error">Incorrect password. Please try again.</div>
+  </div>
+</div>
 
 <div class="header">
   <div class="logo">
@@ -387,31 +425,57 @@
 
     <!-- REPS -->
     <div id="pane-reps" class="pane">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Salesperson performance</div>
-          <select id="rep-year-a" onchange="renderReps()"></select>
-        </div>
-        <div class="panel-body" id="rep-overview-bars"></div>
+      <div class="tab-bar">
+        <button class="tab-btn rep-tab-btn active" id="rep-tab-overview-btn" onclick="switchRepTab('overview',this)">Team Overview</button>
+        <button class="tab-btn rep-tab-btn" id="rep-tab-detail-btn" onclick="switchRepTab('detail',this)">Rep Detail</button>
       </div>
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Rep detail</div>
-          <select id="rep-select" onchange="renderRepDetail()"></select>
+
+      <!-- TEAM OVERVIEW TAB -->
+      <div id="rep-pane-overview">
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title">Rep performance comparison</div><div class="panel-sub">Click any row's Detail button to drill into that rep</div></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--muted);">Compare year:</span>
+              <select id="rep-year-a" onchange="renderRepTeamTable()"></select>
+            </div>
+          </div>
+          <div class="panel-body tbl-wrap" id="rep-overview-table-wrap"></div>
         </div>
-        <div class="panel-body" id="rep-detail"></div>
+      </div>
+
+      <!-- REP DETAIL TAB -->
+      <div id="rep-pane-detail" style="display:none">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Rep detail view</div>
+            <select id="rep-select" onchange="renderRepDetail()"></select>
+          </div>
+          <div class="panel-body" id="rep-detail"></div>
+        </div>
       </div>
     </div>
 
     <!-- ACCOUNTS -->
     <div id="pane-accounts" class="pane">
       <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Account search</div>
-          <input type="text" id="acct-search" placeholder="Search by name or industry..." style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;padding:6px 10px;width:260px;font-family:'DM Sans',sans-serif;" oninput="renderAccounts()">
+        <div class="panel-header" style="flex-wrap:wrap;gap:8px;">
+          <div class="panel-title">Account Search</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="acct-search" placeholder="Search by name, industry or rep…" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;padding:6px 10px;width:230px;font-family:'DM Sans',sans-serif;" oninput="renderAccounts()">
+            <select id="acct-rep-filter" onchange="renderAccounts()"></select>
+            <select id="acct-seg-filter" onchange="renderAccounts()"></select>
+          </div>
         </div>
+        <div id="acct-summary" style="padding:8px 16px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);"></div>
         <div class="panel-body tbl-wrap">
-          <table><thead><tr><th>Account</th><th>Rep</th><th>Industry</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>Trend</th></tr></thead>
+          <table><thead><tr>
+            <th>Account</th>
+            <th>Rep</th>
+            <th>Industry</th>
+            <th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th>
+            <th>Trend</th>
+          </tr></thead>
           <tbody id="acct-body"></tbody></table>
         </div>
       </div>
@@ -842,105 +906,308 @@ function renderWhitespace() {
 }
 
 // ─── REPS ─────────────────────────────────────────────────────────────────────
+let activeRepTab = 'overview';
+let repCharts = {};
+let repTableSort = { col: 'vb', dir: -1 };
+
+function switchRepTab(tab, el) {
+  activeRepTab = tab;
+  document.querySelectorAll('.rep-tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('rep-pane-overview').style.display = tab === 'overview' ? '' : 'none';
+  document.getElementById('rep-pane-detail').style.display = tab === 'detail' ? '' : 'none';
+  if(tab === 'overview') renderRepTeamTable();
+  else renderRepDetail();
+}
+
 function renderReps() {
+  // Init compare-year selector
   const selA = document.getElementById('rep-year-a');
   if(!selA.options.length) {
-    YEARS.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=yLabel(y); if(y===yearB)o.selected=true; selA.appendChild(o); });
+    YEARS.forEach(y => { const o=document.createElement('option'); o.value=y; o.textContent=yLabel(y); if(y===yearB) o.selected=true; selA.appendChild(o); });
   }
-  const yr = parseInt(selA.value)||yearB;
-
-  const repData = ACTIVE_REPS.map(r=>{
-    const accts = ACCOUNTS.filter(a=>a.rep===r);
-    const va = accts.reduce((s,a)=>s+(a[yKey(yearA)]||0),0);
-    const vb = accts.reduce((s,a)=>s+(a[yKey(yr)]||0),0);
-    return {rep:r, va, vb, count: accts.filter(a=>(a[yKey(yr)]||0)>0).length};
-  }).sort((a,b)=>b.vb-a.vb);
-
-  const max = Math.max(...repData.map(r=>Math.max(r.va,r.vb)));
-  document.getElementById('rep-overview-bars').innerHTML = repData.map(r=>{
-    return barRowHTML(r.rep, r.va, r.vb, max, 'w140');
-  }).join('');
-
+  // Init rep selector
   const repSel = document.getElementById('rep-select');
   if(!repSel.options.length) {
-    ACTIVE_REPS.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; repSel.appendChild(o); });
+    ACTIVE_REPS.forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; repSel.appendChild(o); });
   }
+  if(activeRepTab === 'overview') renderRepTeamTable();
+  else renderRepDetail();
+}
+
+function renderRepTeamTable() {
+  const yr = parseInt(document.getElementById('rep-year-a').value) || yearB;
+
+  const repData = ACTIVE_REPS.map(r => {
+    const accts = ACCOUNTS.filter(a => a.rep === r);
+    const va = accts.reduce((s,a) => s+(a[yKey(yearA)]||0), 0);
+    const vb = accts.reduce((s,a) => s+(a[yKey(yr)]||0), 0);
+    const active = accts.filter(a => (a[yKey(yr)]||0) > 0).length;
+    const atr = accts.filter(a => a[yKey(yearA)]>=5000 && a[yKey(yr)] < a[yKey(yearA)]*0.5);
+    const atrLost = atr.reduce((s,a) => s+(a[yKey(yearA)]-a[yKey(yr)]), 0);
+    const segRev = {};
+    accts.forEach(a => { segRev[a.segment] = (segRev[a.segment]||0) + (a[yKey(yr)]||0); });
+    const topSeg = Object.entries(segRev).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+    return { rep:r, va, vb, active, atrLost, topSeg };
+  });
+
+  repData.sort((a,b) => repTableSort.dir * ((repTableSort.dir>0?a:b)[repTableSort.col] - (repTableSort.dir>0?b:a)[repTableSort.col]));
+
+  const si = col => `<span style="color:var(--dim);font-size:9px">${repTableSort.col===col?(repTableSort.dir<0?'▼':'▲'):'⇅'}</span>`;
+
+  document.getElementById('rep-overview-table-wrap').innerHTML = `
+    <table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th>Rep</th>
+        <th class="sortable" onclick="sortRepTable('va')">Base ${yLabel(yearA)} ${si('va')}</th>
+        <th class="sortable" onclick="sortRepTable('vb')">Compare ${yLabel(yr)} ${si('vb')}</th>
+        <th>Change</th>
+        <th class="sortable" onclick="sortRepTable('active')">Active Accts ${si('active')}</th>
+        <th>Top Segment</th>
+        <th class="sortable" onclick="sortRepTable('atrLost')">Attrition Risk ${si('atrLost')}</th>
+        <th></th>
+      </tr></thead>
+      <tbody>${repData.map((r,i) => {
+        const p = fmtPct(r.vb, r.va), col = chgColor(r.vb, r.va);
+        return `<tr>
+          <td class="mono" style="color:var(--dim)">${i+1}</td>
+          <td style="font-weight:500;white-space:nowrap">${r.rep}</td>
+          <td class="mono">${fmtK(r.va)}</td>
+          <td class="mono" style="font-weight:600">${fmtK(r.vb)}</td>
+          <td class="mono" style="color:${col}">${p}</td>
+          <td class="mono">${r.active}</td>
+          <td>${r.topSeg!=='—'?pill(r.topSeg,'gray'):'—'}</td>
+          <td class="mono" style="color:${r.atrLost>0?'var(--bad)':'var(--muted)'}">
+            ${r.atrLost>0?'−'+fmtK(r.atrLost):'—'}
+          </td>
+          <td><button style="font-size:11px;padding:3px 9px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;" onclick="drillToRep('${r.rep}')">Detail →</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+function sortRepTable(col) {
+  if(repTableSort.col === col) repTableSort.dir *= -1;
+  else { repTableSort.col = col; repTableSort.dir = -1; }
+  renderRepTeamTable();
+}
+
+function drillToRep(rep) {
+  activeRepTab = 'detail';
+  document.querySelectorAll('.rep-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('rep-tab-detail-btn').classList.add('active');
+  document.getElementById('rep-pane-overview').style.display = 'none';
+  document.getElementById('rep-pane-detail').style.display = '';
+  document.getElementById('rep-select').value = rep;
   renderRepDetail();
 }
 
 function renderRepDetail() {
   const rep = document.getElementById('rep-select').value || ACTIVE_REPS[0];
-  const repAccts = ACCOUNTS.filter(a=>a.rep===rep);
-  const va = repAccts.reduce((s,a)=>s+(a[yKey(yearA)]||0),0);
-  const vb = repAccts.reduce((s,a)=>s+(a[yKey(yearB)]||0),0);
-  const active = repAccts.filter(a=>(a[yKey(yearB)]||0)>0).length;
-  const atr = repAccts.filter(a=>a[yKey(yearA)]>=5000 && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
-  const atrLost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
-  const top5 = [...repAccts].sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).filter(a=>(a[yKey(yearB)]||0)>0).slice(0,8);
+  const repAccts = ACCOUNTS.filter(a => a.rep === rep);
+  const va = repAccts.reduce((s,a) => s+(a[yKey(yearA)]||0), 0);
+  const vb = repAccts.reduce((s,a) => s+(a[yKey(yearB)]||0), 0);
+  const active = repAccts.filter(a => (a[yKey(yearB)]||0) > 0).length;
+  const atr = repAccts.filter(a => a[yKey(yearA)]>=5000 && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
+  const atrLost = atr.reduce((s,a) => s+(a[yKey(yearA)]-a[yKey(yearB)]), 0);
 
-  // Seg breakdown
-  const segRev = {};
-  repAccts.forEach(a=>{ segRev[a.segment]=(segRev[a.segment]||0)+(a[yKey(yearB)]||0); });
-  const segSorted = Object.entries(segRev).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  // Segment revenue for base and compare
+  const segRevB = {}, segRevA = {};
+  repAccts.forEach(a => {
+    segRevB[a.segment] = (segRevB[a.segment]||0) + (a[yKey(yearB)]||0);
+    segRevA[a.segment] = (segRevA[a.segment]||0) + (a[yKey(yearA)]||0);
+  });
+  const segSorted = Object.entries(segRevB).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const maxSegV = Math.max(...segSorted.map(([,v])=>v), ...segSorted.map(([s])=>segRevA[s]||0), 1);
+
+  // Full account list sorted by compare year
+  const acctList = [...repAccts]
+    .filter(a => (a[yKey(yearB)]||0)>0 || (a[yKey(yearA)]||0)>0)
+    .sort((a,b) => (b[yKey(yearB)]||0) - (a[yKey(yearB)]||0));
 
   document.getElementById('rep-detail').innerHTML = `
     <div class="rep-stats">
-      <div class="rep-stat"><div class="rep-stat-label">${yLabel(yearB)} revenue</div><div class="rep-stat-val">${fmtK(vb)}</div></div>
+      <div class="rep-stat"><div class="rep-stat-label">${yLabel(yearB)} Revenue</div><div class="rep-stat-val">${fmtK(vb)}</div></div>
       <div class="rep-stat"><div class="rep-stat-label">vs ${yLabel(yearA)}</div><div class="rep-stat-val" style="color:${chgColor(vb,va)}">${fmtPct(vb,va)}</div></div>
-      <div class="rep-stat"><div class="rep-stat-label">Active accounts</div><div class="rep-stat-val">${active}</div></div>
-      <div class="rep-stat"><div class="rep-stat-label">Attrition risk</div><div class="rep-stat-val" style="color:var(--bad)">${fmtK(atrLost)}</div></div>
+      <div class="rep-stat"><div class="rep-stat-label">Active Accounts</div><div class="rep-stat-val">${active}</div></div>
+      <div class="rep-stat"><div class="rep-stat-label">Attrition Risk</div><div class="rep-stat-val" style="color:${atrLost>0?'var(--bad)':'var(--good)'}">${atrLost>0?fmtK(atrLost):'$0'}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+    <div class="two-col" style="margin-bottom:16px;">
       <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Top accounts (${yLabel(yearB)})</div>
-        <table style="font-size:12px;"><tbody>${top5.map(a=>{
-          const va2=a[yKey(yearA)], vb2=a[yKey(yearB)];
-          return `<tr><td style="font-weight:500;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</td>
-            <td class="mono" style="text-align:right">${fmtK(vb2)}</td>
-            <td class="mono" style="color:${chgColor(vb2,va2)};text-align:right">${fmtPct(vb2,va2)}</td></tr>`;
-        }).join('')}</tbody></table>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Revenue Trend 2019–2026</div>
+        <div style="position:relative;height:190px;"><canvas id="rep-yoy-chart"></canvas></div>
       </div>
       <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Segment mix (${yLabel(yearB)})</div>
-        ${segSorted.slice(0,6).map(([s,v])=>{
-          const maxSV = segSorted[0][1];
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Industry Mix — ${yLabel(yearA)} <span style="color:var(--dim)">vs</span> ${yLabel(yearB)}</div>
+        ${segSorted.slice(0,8).map(([s,v]) => {
+          const vaS = segRevA[s]||0;
           return `<div class="bar-row" style="margin-bottom:6px;">
             <span class="bar-label" style="width:110px;font-size:11px;">${s}</span>
-            <div class="bar-track"><div class="bar-b" style="width:${(v/maxSV*100).toFixed(0)}%;background:${SEG_COLORS[s]||'#888'};opacity:0.7;"></div></div>
-            <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;width:60px;text-align:right">${fmtK(v)}</span>
+            <div class="bar-track">
+              <div class="bar-a" style="width:${(vaS/maxSegV*100).toFixed(0)}%;background:${SEG_COLORS[s]||'#888'};opacity:0.35;"></div>
+              <div class="bar-b" style="width:${(v/maxSegV*100).toFixed(0)}%;background:${SEG_COLORS[s]||'#888'};opacity:0.8;"></div>
+            </div>
+            <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;width:100px;text-align:right;">${fmtK(vaS)} → ${fmtK(v)}</span>
           </div>`;
         }).join('')}
-        ${atr.length>0?`<div style="margin-top:10px;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px;">At-risk accounts</div>
-        ${atr.slice(0,5).map(a=>`<div style="font-size:11px;display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);"><span>${a.name}</span><span style="color:var(--bad);font-family:'DM Mono',monospace">−${fmtK(a[yKey(yearA)]-a[yKey(yearB)])}</span></div>`).join('')}`:''}
       </div>
+    </div>
+
+    ${atr.length > 0 ? `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;font-weight:600;">At-Risk Accounts — >50% drop from ${yLabel(yearA)}</div>
+      <div class="tbl-wrap"><table style="font-size:12px;">
+        <thead><tr><th>Account</th><th>Industry</th><th>${yLabel(yearA)}</th><th>${yLabel(yearB)}</th><th>Revenue Lost</th></tr></thead>
+        <tbody>${atr.slice(0,10).map(a => `<tr>
+          <td style="font-weight:500">${a.name}</td>
+          <td style="color:var(--muted);font-size:11px">${a.industry}</td>
+          <td class="mono">${fmtK(a[yKey(yearA)])}</td>
+          <td class="mono" style="color:var(--bad)">${fmtK(a[yKey(yearB)])}</td>
+          <td class="mono" style="color:var(--bad)">−${fmtK(a[yKey(yearA)]-a[yKey(yearB)])}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>` : ''}
+
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;font-weight:600;">All Accounts (${acctList.filter(a=>(a[yKey(yearB)]||0)>0).length} active in ${yLabel(yearB)} / ${acctList.length} total)</div>
+      <div class="tbl-wrap"><table style="font-size:12px;">
+        <thead><tr>
+          <th>Account</th><th>Industry</th><th>Segment</th>
+          <th>${yLabel(yearA)}</th><th>${yLabel(yearB)}</th><th>Chg</th>
+        </tr></thead>
+        <tbody>${acctList.map(a => {
+          const va2=a[yKey(yearA)]||0, vb2=a[yKey(yearB)]||0;
+          const chg = va2>0 ? fmtPct(vb2,va2) : vb2>0 ? '<span style="color:var(--good)">new</span>' : '—';
+          return `<tr>
+            <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+            <td style="color:var(--muted);font-size:11px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.industry}</td>
+            <td>${pill(a.segment,'gray')}</td>
+            <td class="mono">${va2>0?fmtK(va2):'—'}</td>
+            <td class="mono" style="font-weight:500">${vb2>0?fmtK(vb2):'—'}</td>
+            <td class="mono" style="color:${chgColor(vb2,va2)}">${chg}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
     </div>`;
+
+  // Render Y-o-Y chart after DOM is updated
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('rep-yoy-chart');
+    if(!canvas) return;
+    if(repCharts.yoy) repCharts.yoy.destroy();
+    const yrs = [2019,2020,2021,2022,2023,2024,2025,2026];
+    const vals = yrs.map(y => repAccts.reduce((s,a) => s+(a[yKey(y)]||0), 0));
+    repCharts.yoy = new Chart(canvas, {
+      type: 'line',
+      data: { labels: yrs.map(yLabel), datasets:[{
+        label: 'Revenue', data: vals,
+        borderColor: '#E12B27', backgroundColor: 'rgba(225,43,39,0.07)',
+        fill: true, tension: 0.3, borderWidth: 2,
+        pointBackgroundColor: yrs.map(y => y===yearA?'#E12B27':y===yearB?'#FFCE02':'rgba(255,255,255,0.4)'),
+        pointRadius: yrs.map(y => y===yearA||y===yearB?6:3)
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>'  '+fmtK(c.parsed.y)}} },
+        scales: {
+          x: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88'} },
+          y: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88',callback:v=>fmtK(v)} }
+        }
+      }
+    });
+  });
 }
 
 // ─── ACCOUNTS SEARCH ─────────────────────────────────────────────────────────
 function renderAccounts() {
-  const q = (document.getElementById('acct-search').value||'').toLowerCase();
-  const filtered = q.length>1
-    ? ACCOUNTS.filter(a=>a.name.toLowerCase().includes(q)||a.industry.toLowerCase().includes(q)||(a.rep&&a.rep.toLowerCase().includes(q)))
-    : [...ACCOUNTS].sort((a,b)=>b.y2025-a.y2025).slice(0,100);
+  // Populate filters on first load
+  const repFilt = document.getElementById('acct-rep-filter');
+  const segFilt = document.getElementById('acct-seg-filter');
+  if(!repFilt.options.length) {
+    const a0=document.createElement('option'); a0.value=''; a0.textContent='All Reps'; repFilt.appendChild(a0);
+    ACTIVE_REPS.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; repFilt.appendChild(o); });
+  }
+  if(!segFilt.options.length) {
+    const s0=document.createElement('option'); s0.value=''; s0.textContent='All Segments'; segFilt.appendChild(s0);
+    SEGS.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; segFilt.appendChild(o); });
+  }
 
-  const sorted = filtered.sort((a,b)=>b.y2025-a.y2025).slice(0,80);
-  document.getElementById('acct-body').innerHTML = sorted.map(a=>{
-    const vals = [2019,2020,2021,2022,2023,2024,2025].map(y=>
+  const q = (document.getElementById('acct-search').value||'').toLowerCase();
+  const rep = repFilt.value;
+  const seg = segFilt.value;
+
+  const filtered = ACCOUNTS.filter(a => {
+    const matchQ = q.length < 2 ||
+      a.name.toLowerCase().includes(q) ||
+      (a.industry||'').toLowerCase().includes(q) ||
+      (a.rep||'').toLowerCase().includes(q);
+    const matchRep = !rep || a.rep === rep;
+    const matchSeg = !seg || a.segment === seg;
+    return matchQ && matchRep && matchSeg;
+  });
+
+  const sorted = [...filtered].sort((a,b) => (b[yKey(yearB)]||0) - (a[yKey(yearB)]||0)).slice(0, 200);
+
+  // Summary bar
+  const totalB = filtered.reduce((s,a) => s+(a[yKey(yearB)]||0), 0);
+  const totalA = filtered.reduce((s,a) => s+(a[yKey(yearA)]||0), 0);
+  const active2 = filtered.filter(a => (a[yKey(yearB)]||0) > 0).length;
+  document.getElementById('acct-summary').innerHTML =
+    `${filtered.length.toLocaleString()} accounts &nbsp;·&nbsp; <span style="color:var(--text)">${active2}</span> active in ${yLabel(yearB)} &nbsp;·&nbsp; Total: <span class="mono" style="color:var(--text)">${fmtK(totalA)}</span> → <span class="mono" style="font-weight:600;color:var(--text)">${fmtK(totalB)}</span> <span class="mono" style="color:${chgColor(totalB,totalA)}">${fmtPct(totalB,totalA)}</span>`;
+
+  document.getElementById('acct-body').innerHTML = sorted.map(a => {
+    const vals = [2019,2020,2021,2022,2023,2024,2025].map(y =>
       `<td class="mono" style="color:${a[yKey(y)]>0?'var(--text)':'var(--dim)'}">${a[yKey(y)]>0?fmtK(a[yKey(y)]):'—'}</td>`
     ).join('');
-    // Simple sparkline — ascii-style indicator
-    const yrs=[2019,2020,2021,2022,2023,2024,2025].map(y=>a[yKey(y)]);
-    const mx=Math.max(...yrs);
+    const yrs2 = [2019,2020,2021,2022,2023,2024,2025].map(y => a[yKey(y)]||0);
+    const mx = Math.max(...yrs2);
     const trend = mx>0 ? (a.y2025>=a.y2024?'<span style="color:var(--good)">↑</span>':'<span style="color:var(--bad)">↓</span>') : '—';
-    return `<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
-      <td style="color:var(--muted);white-space:nowrap">${a.rep||'—'}</td>
-      <td style="color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.industry}</td>
+    const repBadge = a.rep
+      ? `<span class="pill pill-blue" style="font-size:10px;padding:2px 6px;cursor:pointer;" onclick="filterByRep('${a.rep}')" title="Click to filter by ${a.rep}">${a.rep}</span>`
+      : '<span style="color:var(--dim);font-size:11px">—</span>';
+    return `<tr>
+      <td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+      <td style="white-space:nowrap">${repBadge}</td>
+      <td style="color:var(--muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${a.industry}</td>
       ${vals}<td>${trend}</td></tr>`;
   }).join('');
 }
 
+function filterByRep(rep) {
+  document.getElementById('acct-rep-filter').value = rep;
+  renderAccounts();
+}
+
+// ─── PASSWORD ────────────────────────────────────────────────────────────────
+function checkPassword() {
+  const input = document.getElementById('lock-input').value;
+  // Obfuscated check — atob decodes to actual password at runtime
+  if(input === atob('SG9uYmx1ZXRvMTVN')) {
+    localStorage.setItem('hb_unlocked', '1');
+    document.getElementById('lock-overlay').style.display = 'none';
+  } else {
+    const err = document.getElementById('lock-error');
+    err.style.display = 'block';
+    document.getElementById('lock-input').value = '';
+    document.getElementById('lock-input').focus();
+    setTimeout(() => { err.style.display='none'; }, 3000);
+  }
+}
+
+function initAuth() {
+  if(localStorage.getItem('hb_unlocked') === '1') {
+    document.getElementById('lock-overlay').style.display = 'none';
+  } else {
+    document.getElementById('lock-overlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('lock-input').focus(), 50);
+  }
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 initYearPills();
+initAuth();
 renderOverview();
 </script>
 </body>
