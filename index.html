@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HONBLUE Sales Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a1a2e;
+    --red: #E12B27;
+    --yellow: #FFCE02;
+    --sand: #f5f0e8;
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface2: #232340;
+    --surface3: #2d2d4e;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0eee8;
+    --muted: rgba(240,238,232,0.5);
+    --dim: rgba(240,238,232,0.25);
+    --good: #4ade80;
+    --bad: #f87171;
+    --warn: #fbbf24;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+  
+  /* HEADER */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark { width: 28px; height: 28px; background: var(--red); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; color: white; letter-spacing: -0.5px; }
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 2px; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  
+  /* YEAR SELECTOR */
+  .year-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .year-bar-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .year-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .year-pill { padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border2); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--muted); background: transparent; font-family: 'DM Mono', monospace; }
+  .year-pill:hover { border-color: var(--red); color: var(--text); }
+  .year-pill.selected-a { background: var(--red); border-color: var(--red); color: white; }
+  .year-pill.selected-b { background: var(--surface3); border-color: var(--yellow); color: var(--yellow); }
+  .year-mode-btn { padding: 5px 12px; border-radius: var(--radius); background: var(--surface2); border: 1px solid var(--border2); font-size: 12px; color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .year-mode-btn:hover { color: var(--text); border-color: var(--border2); }
+  .year-legend { display: flex; gap: 12px; margin-left: 8px; }
+  .yl-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .yl-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* LAYOUT */
+  .main { display: flex; height: calc(100vh - 109px); }
+  .sidebar { width: 200px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 0; overflow-y: auto; }
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  
+  /* NAV */
+  .nav-section { padding: 0 12px; margin-bottom: 4px; }
+  .nav-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); padding: 8px 8px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--radius); cursor: pointer; font-size: 13px; color: var(--muted); transition: all 0.12s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(225,43,39,0.15); color: var(--red); font-weight: 500; }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+  
+  /* CARDS */
+  .metric-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; }
+  .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .metric-value { font-size: 24px; font-weight: 600; line-height: 1; margin-bottom: 4px; font-family: 'DM Mono', monospace; }
+  .metric-sub { font-size: 11px; color: var(--muted); }
+  .metric-sub.good { color: var(--good); }
+  .metric-sub.bad { color: var(--bad); }
+  
+  /* PANELS */
+  .pane { display: none; }
+  .pane.active { display: block; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 14px; }
+  .panel-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 13px; font-weight: 600; }
+  .panel-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .panel-body { padding: 16px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  /* BAR ROWS */
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bar-label { font-size: 12px; color: var(--text); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.w140 { width: 140px; }
+  .bar-label.w100 { width: 100px; }
+  .bar-track { flex: 1; background: rgba(255,255,255,0.06); border-radius: 3px; height: 18px; position: relative; overflow: hidden; }
+  .bar-a { position: absolute; top: 0; left: 0; height: 100%; border-radius: 3px; }
+  .bar-b { position: absolute; top: 0; left: 0; height: 100%; border-radius: 3px; opacity: 0.5; }
+  .bar-vals { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; flex-shrink: 0; width: 120px; text-align: right; }
+  .bar-chg { font-size: 11px; font-weight: 500; font-family: 'DM Mono', monospace; flex-shrink: 0; width: 50px; text-align: right; }
+
+  /* TABLES */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); border-bottom: 1px solid var(--border); padding: 6px 8px; white-space: nowrap; }
+  td { padding: 8px 8px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .mono { font-family: 'DM Mono', monospace; }
+  
+  /* PILLS */
+  .pill { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 100px; font-weight: 500; white-space: nowrap; }
+  .pill-red { background: rgba(225,43,39,0.2); color: #f87171; border: 1px solid rgba(225,43,39,0.3); }
+  .pill-amber { background: rgba(251,191,36,0.15); color: var(--warn); border: 1px solid rgba(251,191,36,0.25); }
+  .pill-green { background: rgba(74,222,128,0.12); color: var(--good); border: 1px solid rgba(74,222,128,0.2); }
+  .pill-blue { background: rgba(96,165,250,0.12); color: #93c5fd; border: 1px solid rgba(96,165,250,0.2); }
+  .pill-gray { background: rgba(255,255,255,0.07); color: var(--muted); border: 1px solid var(--border); }
+  .pill-yellow { background: rgba(255,206,2,0.15); color: var(--yellow); border: 1px solid rgba(255,206,2,0.25); }
+  
+  /* SELECT */
+  select { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-size: 12px; padding: 6px 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  select:focus { outline: none; border-color: var(--red); }
+
+  /* REP VIEW */
+  .rep-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-bottom: 12px; }
+  .rep-stat { background: var(--surface2); border-radius: var(--radius); padding: 10px 12px; }
+  .rep-stat-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rep-stat-val { font-size: 18px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .rep-note { font-size: 12px; color: var(--muted); border-left: 2px solid var(--red); padding-left: 10px; margin-bottom: 14px; line-height: 1.6; }
+
+  /* CHART WRAPPER */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* YEAR COMPARE TAG */
+  .compare-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 100px; padding: 3px 10px; margin-bottom: 14px; }
+  .ct-a { color: var(--red); font-weight: 600; font-family: 'DM Mono', monospace; }
+  .ct-sep { color: var(--dim); }
+  .ct-b { color: var(--yellow); font-weight: 600; font-family: 'DM Mono', monospace; }
+
+  /* TREND SPARKLINE area */
+  .sparkline-row { display: flex; align-items: center; gap: 6px; }
+  .spark { flex: 1; height: 24px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+  /* NOTICE BANNER */
+  .notice { display: flex; align-items: center; gap: 8px; background: rgba(255,206,2,0.08); border: 1px solid rgba(255,206,2,0.2); border-radius: var(--radius); padding: 8px 12px; font-size: 12px; color: var(--warn); margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">HB</div>
+    <div>
+      <span class="logo-text">HONBLUE</span>
+      <span class="logo-sub">Sales Intelligence</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="compare-tag-header" class="compare-tag">
+      <span class="ct-a" id="h-year-a">2024</span>
+      <span class="ct-sep">vs</span>
+      <span class="ct-b" id="h-year-b">2025</span>
+    </span>
+  </div>
+</div>
+
+<div class="year-bar">
+  <span class="year-bar-label">Base year</span>
+  <div class="year-pills" id="pills-a"></div>
+  <span class="year-bar-label" style="margin-left:8px;">Compare to</span>
+  <div class="year-pills" id="pills-b"></div>
+  <div class="year-legend" style="margin-left:12px;">
+    <div class="yl-item"><div class="yl-dot" style="background:var(--red);"></div><span id="leg-a">2024 (base)</span></div>
+    <div class="yl-item"><div class="yl-dot" style="background:var(--yellow);opacity:0.7;"></div><span id="leg-b">2025 (compare)</span></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <button class="nav-item active" onclick="nav('overview',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="nav('segments',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v6l4 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        Segments
+      </button>
+      <button class="nav-item" onclick="nav('divisions',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="8" width="3" height="6" rx="1" fill="currentColor" opacity="0.6"/><rect x="6" y="5" width="3" height="9" rx="1" fill="currentColor" opacity="0.8"/><rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor"/></svg>
+        Divisions
+      </button>
+      <button class="nav-item" onclick="nav('trends',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><polyline points="1,12 5,7 9,9 15,3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Revenue Trends
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Actions</div>
+      <button class="nav-item" onclick="nav('attrition',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 3v5l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M11 1l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Attrition Watch
+      </button>
+      <button class="nav-item" onclick="nav('expansion',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Expansion
+      </button>
+      <button class="nav-item" onclick="nav('lfg',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2c0 3-4 4-4 7a4 4 0 008 0c0-3-4-4-4-7z" stroke="currentColor" stroke-width="1.2"/></svg>
+        LFG Lumpiness
+      </button>
+      <button class="nav-item" onclick="nav('whitespace',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Whitespace
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">People</div>
+      <button class="nav-item" onclick="nav('reps',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        By Salesperson
+      </button>
+      <button class="nav-item" onclick="nav('accounts',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Account Search
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div id="pane-overview" class="pane active">
+      <div class="metric-row" id="overview-metrics"></div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Revenue by segment</div></div></div>
+          <div class="panel-body" id="seg-bars-overview"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Top accounts</div></div></div>
+          <div class="panel-body">
+            <div class="tbl-wrap"><table id="top-accounts-tbl">
+              <thead><tr><th>Account</th><th>Segment</th><th id="ta-h-a">2024</th><th id="ta-h-b">2025</th><th>Chg</th></tr></thead>
+              <tbody id="top-accounts-body"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEGMENTS -->
+    <div id="pane-segments" class="pane">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Revenue by segment</div></div>
+        <div class="panel-body" id="seg-bars-detail"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top accounts per segment</div><select id="seg-select" onchange="renderSegTop()"></select></div>
+        <div class="panel-body">
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Account</th><th>Rep</th><th id="sth-a">Base</th><th id="sth-b">Compare</th><th>Δ</th></tr></thead>
+            <tbody id="seg-top-body"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVISIONS -->
+    <div id="pane-divisions" class="pane">
+      <div class="notice">Division-level data (AEC, CP, DP, LFG) is available for 2024–2025 only. Historical totals use account-level data.</div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Division revenue 2024 vs 2025</div></div>
+        <div class="panel-body" id="div-bars"></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Division character</div></div></div>
+          <div class="panel-body" id="div-chars"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Top LFG accounts 2025</div></div>
+          <div class="panel-body">
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Account</th><th>LFG 2024</th><th>LFG 2025</th><th>Signal</th></tr></thead>
+              <tbody id="lfg-top-body"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRENDS -->
+    <div id="pane-trends" class="pane">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Total revenue 2019–2025</div><div class="panel-sub">2020–2021 COVID impact visible</div></div>
+        <div class="panel-body"><div class="chart-wrap" style="height:260px"><canvas id="trend-chart"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Segment trends 2019–2025</div></div>
+        <div class="panel-body"><div class="chart-wrap" style="height:280px"><canvas id="seg-trend-chart"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Active account count by year</div></div>
+        <div class="panel-body"><div class="chart-wrap" style="height:200px"><canvas id="acct-trend-chart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ATTRITION -->
+    <div id="pane-attrition" class="pane">
+      <div class="metric-row" id="atr-metrics"></div>
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">Attrition watch</div><div class="panel-sub">Accounts with base-year spend ≥$5k that dropped &gt;50% in compare year</div></div>
+          <select id="atr-min" onchange="renderAttrition()">
+            <option value="5000">Min $5k</option><option value="10000" selected>Min $10k</option>
+            <option value="25000">Min $25k</option><option value="50000">Min $50k</option>
+          </select>
+        </div>
+        <div class="panel-body tbl-wrap">
+          <table><thead><tr><th>Account</th><th>Rep</th><th>Segment</th><th id="atr-h-a">Base</th><th id="atr-h-b">Compare</th><th>Revenue lost</th><th>Status</th></tr></thead>
+          <tbody id="atr-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPANSION -->
+    <div id="pane-expansion" class="pane">
+      <div class="panel">
+        <div class="panel-header"><div><div class="panel-title">Growth accounts</div><div class="panel-sub">Active accounts with &gt;20% growth and compare-year spend ≥$30k</div></div></div>
+        <div class="panel-body tbl-wrap">
+          <table><thead><tr><th>Account</th><th>Rep</th><th>Segment</th><th id="exp-h-a">Base</th><th id="exp-h-b">Compare</th><th>Growth</th></tr></thead>
+          <tbody id="exp-body"></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div><div class="panel-title">Moderate decline — still active</div><div class="panel-sub">25–50% drop, compare-year spend ≥$20k — warm outreach candidates</div></div></div>
+        <div class="panel-body tbl-wrap">
+          <table><thead><tr><th>Account</th><th>Rep</th><th>Segment</th><th id="mod-h-a">Base</th><th id="mod-h-b">Compare</th><th>Δ</th></tr></thead>
+          <tbody id="mod-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LFG -->
+    <div id="pane-lfg" class="pane">
+      <div class="notice">LFG division data available 2024–2025 only. Post-project fall-off pattern: large LFG spike for remodel/rebuild, then drops.</div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Post-project fall-off (2024→2025)</div></div>
+          <div class="panel-body tbl-wrap">
+            <table><thead><tr><th>Account</th><th>Rep</th><th>LFG 2024</th><th>LFG 2025</th><th>Drop</th></tr></thead>
+            <tbody id="lfg-drop-body"></tbody></table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Active LFG projects (growing 2025)</div></div>
+          <div class="panel-body tbl-wrap">
+            <table><thead><tr><th>Account</th><th>Rep</th><th>LFG 2024</th><th>LFG 2025</th></tr></thead>
+            <tbody id="lfg-grow-body"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHITESPACE -->
+    <div id="pane-whitespace" class="pane">
+      <div class="panel">
+        <div class="panel-header"><div><div class="panel-title">Whitespace — zero or near-zero revenue accounts</div><div class="panel-sub">Major Hawaii brands matching HONBLUE ICPs with no active relationship</div></div></div>
+        <div class="panel-body tbl-wrap">
+          <table><thead><tr><th>Brand / Account</th><th>Segment</th><th>Opportunity</th><th>Priority</th></tr></thead>
+          <tbody id="ws-body"></tbody>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div><div class="panel-title">Dormant accounts</div><div class="panel-sub">Had significant revenue 2+ years ago, now zero — reactivation targets</div></div></div>
+        <div class="panel-body tbl-wrap">
+          <table><thead><tr><th>Account</th><th>Industry</th><th>Peak year</th><th>Peak revenue</th><th>Last active</th></tr></thead>
+          <tbody id="dormant-body"></tbody>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPS -->
+    <div id="pane-reps" class="pane">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Salesperson performance</div>
+          <select id="rep-year-a" onchange="renderReps()"></select>
+        </div>
+        <div class="panel-body" id="rep-overview-bars"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Rep detail</div>
+          <select id="rep-select" onchange="renderRepDetail()"></select>
+        </div>
+        <div class="panel-body" id="rep-detail"></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS -->
+    <div id="pane-accounts" class="pane">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Account search</div>
+          <input type="text" id="acct-search" placeholder="Search by name or industry..." style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;padding:6px 10px;width:260px;font-family:'DM Sans',sans-serif;" oninput="renderAccounts()">
+        </div>
+        <div class="panel-body tbl-wrap">
+          <table><thead><tr><th>Account</th><th>Rep</th><th>Industry</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>Trend</th></tr></thead>
+          <tbody id="acct-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="accounts.js"></script>
+<script src="divisions.js"></script>
+<script>
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let yearA = 2024, yearB = 2025;
+const YEARS = [2019,2020,2021,2022,2023,2024,2025,2026];
+const YEAR_LABELS = {2026: '2026*'};
+const yLabel = y => YEAR_LABELS[y] || String(y);
+const yKey = y => `y${y}`;
+
+const ACTIVE_REPS = ['Stan Calma','Stacy Duldulao','Matt Heim','Rhoda Calma','Souk Phanthadara',
+  'Darren Straka','Jasmine Christian','Dave Miklos','Tracey Johnson',
+  'Arnelle Stephens','Connor Ruppel','Jaison VanDenover','Travis Gaspar'];
+
+const SEGS = ['AEC','Hospitality','Retail','Real Estate','Food & Beverage','Financial Services',
+  'Government','Nonprofit','Healthcare','Education','Other'];
+
+const SEG_COLORS = {
+  'AEC':'#4ade80','Hospitality':'#60a5fa','Retail':'#f59e0b','Real Estate':'#c084fc',
+  'Food & Beverage':'#fb923c','Financial Services':'#38bdf8','Government':'#94a3b8',
+  'Nonprofit':'#a78bfa','Healthcare':'#34d399','Education':'#f472b6','Other':'#6b7280'
+};
+
+function fmtK(v) {
+  if(v==null||isNaN(v)) return '—';
+  if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
+  if(v>=1000) return '$'+(v/1000).toFixed(0)+'k';
+  return '$'+Math.round(v);
+}
+function fmtPct(a,b) {
+  if(!b) return '—';
+  const p = Math.round((a-b)/b*100);
+  return (p>=0?'+':'')+p+'%';
+}
+function chgColor(a,b) { return a>=b?'var(--good)':'var(--bad)'; }
+function pill(txt, cls) { return `<span class="pill pill-${cls}">${txt}</span>`; }
+
+// ─── YEAR PILLS ─────────────────────────────────────────────────────────────
+function initYearPills() {
+  const pa = document.getElementById('pills-a');
+  const pb = document.getElementById('pills-b');
+  YEARS.forEach(y => {
+    const ba = document.createElement('button');
+    ba.className = 'year-pill' + (y===yearA?' selected-a':'');
+    ba.textContent = yLabel(y);
+    ba.dataset.year = y;
+    ba.onclick = () => { yearA=y; refreshAll(); };
+    pa.appendChild(ba);
+
+    const bb = document.createElement('button');
+    bb.className = 'year-pill' + (y===yearB?' selected-b':'');
+    bb.textContent = yLabel(y);
+    bb.dataset.year = y;
+    bb.onclick = () => { yearB=y; refreshAll(); };
+    pb.appendChild(bb);
+  });
+}
+
+function updateYearPills() {
+  document.querySelectorAll('#pills-a .year-pill').forEach(b=>{
+    b.className = 'year-pill' + (parseInt(b.dataset.year)===yearA?' selected-a':'');
+  });
+  document.querySelectorAll('#pills-b .year-pill').forEach(b=>{
+    b.className = 'year-pill' + (parseInt(b.dataset.year)===yearB?' selected-b':'');
+  });
+  document.getElementById('h-year-a').textContent = yLabel(yearA);
+  document.getElementById('h-year-b').textContent = yLabel(yearB);
+  document.getElementById('leg-a').textContent = yLabel(yearA)+' (base)';
+  document.getElementById('leg-b').textContent = yLabel(yearB)+' (compare)';
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function nav(id, el) {
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  el.classList.add('active');
+  renderPane(id);
+}
+
+function renderPane(id) {
+  const fns = {
+    overview: renderOverview, segments: renderSegments, divisions: renderDivisions,
+    trends: renderTrends, attrition: renderAttrition, expansion: renderExpansion,
+    lfg: renderLFG, whitespace: renderWhitespace, reps: renderReps, accounts: renderAccounts
+  };
+  if(fns[id]) fns[id]();
+}
+
+let currentPane = 'overview';
+
+function refreshAll() {
+  updateYearPills();
+  const active = document.querySelector('.pane.active');
+  if(active) renderPane(active.id.replace('pane-',''));
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function segTotals(y) {
+  const out = {};
+  SEGS.forEach(s => { out[s] = 0; });
+  ACCOUNTS.forEach(a => { if(out[a.segment]!==undefined) out[a.segment]+=a[yKey(y)]||0; });
+  return out;
+}
+
+function totalRev(y) { return ACCOUNTS.reduce((s,a)=>s+(a[yKey(y)]||0),0); }
+function activeCount(y) { return ACCOUNTS.filter(a=>(a[yKey(y)]||0)>0).length; }
+
+function barRowHTML(label, vA, vB, maxVal, labelWidth='w140') {
+  const wA = maxVal>0?(vA/maxVal*100).toFixed(1):0;
+  const wB = maxVal>0?(vB/maxVal*100).toFixed(1):0;
+  const p = fmtPct(vB, vA);
+  const col = chgColor(vB, vA);
+  return `<div class="bar-row">
+    <span class="bar-label ${labelWidth}">${label}</span>
+    <div class="bar-track">
+      <div class="bar-a" style="width:${wA}%;background:var(--red);opacity:0.6;"></div>
+      <div class="bar-b" style="width:${wB}%;background:var(--yellow);opacity:0.5;"></div>
+    </div>
+    <span class="bar-vals mono">${fmtK(vA)} → ${fmtK(vB)}</span>
+    <span class="bar-chg" style="color:${col}">${p}</span>
+  </div>`;
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────────────────────────
+function renderOverview() {
+  const ra = totalRev(yearA), rb = totalRev(yearB);
+  const ca = activeCount(yearA), cb = activeCount(yearB);
+  const pctChg = fmtPct(rb, ra);
+  const acctChg = cb - ca;
+
+  // Attrition metric
+  const atr = ACCOUNTS.filter(a=>a[yKey(yearA)]>=10000 && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
+  const atrLost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
+
+  // Growth metric
+  const grow = ACCOUNTS.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2);
+
+  document.getElementById('overview-metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">${yLabel(yearB)} revenue</div>
+      <div class="metric-value">${fmtK(rb)}</div>
+      <div class="metric-sub ${rb>=ra?'good':'bad'}">${pctChg} vs ${yLabel(yearA)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Active accounts</div>
+      <div class="metric-value">${cb.toLocaleString()}</div>
+      <div class="metric-sub ${acctChg>=0?'good':'bad'}">${acctChg>=0?'+':''}${acctChg} vs ${yLabel(yearA)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Revenue at risk</div>
+      <div class="metric-value" style="color:var(--bad)">${fmtK(atrLost)}</div>
+      <div class="metric-sub">${atr.length} accounts &gt;50% drop</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Growth accounts</div>
+      <div class="metric-value" style="color:var(--good)">${grow.length}</div>
+      <div class="metric-sub">&gt;20% growth &amp; ≥$30k</div>
+    </div>`;
+
+  // Segment bars
+  const sa = segTotals(yearA), sb = segTotals(yearB);
+  const maxSeg = Math.max(...Object.values(sa), ...Object.values(sb));
+  const sorted = [...SEGS].sort((x,y)=>sb[y]-sb[x]);
+  document.getElementById('seg-bars-overview').innerHTML = sorted.map(s=>barRowHTML(s, sa[s], sb[s], maxSeg)).join('');
+
+  // Top accounts table
+  document.getElementById('ta-h-a').textContent = yLabel(yearA);
+  document.getElementById('ta-h-b').textContent = yLabel(yearB);
+  const top = [...ACCOUNTS].sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).filter(a=>a[yKey(yearB)]>0).slice(0,20);
+  document.getElementById('top-accounts-body').innerHTML = top.map(a=>{
+    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
+    const p=fmtPct(vb,va), col=chgColor(vb,va);
+    return `<tr><td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:${col}">${p}</td></tr>`;
+  }).join('');
+}
+
+// ─── SEGMENTS ────────────────────────────────────────────────────────────────
+function renderSegments() {
+  const sa = segTotals(yearA), sb = segTotals(yearB);
+  const maxSeg = Math.max(...Object.values(sa), ...Object.values(sb));
+  const sorted = [...SEGS].sort((x,y)=>sb[y]-sb[x]);
+  document.getElementById('seg-bars-detail').innerHTML = sorted.map(s=>barRowHTML(s, sa[s], sb[s], maxSeg)).join('');
+
+  const sel = document.getElementById('seg-select');
+  if(!sel.options.length) {
+    SEGS.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+  }
+  renderSegTop();
+}
+
+function renderSegTop() {
+  const seg = document.getElementById('seg-select').value || SEGS[0];
+  document.getElementById('sth-a').textContent = yLabel(yearA);
+  document.getElementById('sth-b').textContent = yLabel(yearB);
+  const accts = ACCOUNTS.filter(a=>a.segment===seg).sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).filter(a=>a[yKey(yearB)]>0||a[yKey(yearA)]>0).slice(0,20);
+  document.getElementById('seg-top-body').innerHTML = accts.map(a=>{
+    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
+    const p=fmtPct(vb,va), col=chgColor(vb,va);
+    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+      <td class="mono">${fmtK(va)}</td><td class="mono">${fmtK(vb)}</td>
+      <td class="mono" style="color:${col}">${p}</td></tr>`;
+  }).join('');
+}
+
+// ─── DIVISIONS ───────────────────────────────────────────────────────────────
+function renderDivisions() {
+  const DIV_ORDER = ['CP','LFG','AEC','DP','HBMaui','Dispatch','Other'];
+  const DIV_COLORS = {CP:'#60a5fa',LFG:'#fbbf24',AEC:'#4ade80',DP:'#c084fc',HBMaui:'#34d399',Dispatch:'#94a3b8',Other:'#6b7280'};
+  const div24={}, div25={};
+  DIV_ORDER.forEach(d=>{div24[d]=0;div25[d]=0;});
+  DIVISIONS.forEach(d=>{
+    DIV_ORDER.forEach(k=>{ div24[k]+=(d.d2024[k]||0); div25[k]+=(d.d2025[k]||0); });
+  });
+  const maxDiv = Math.max(...DIV_ORDER.map(d=>Math.max(div24[d],div25[d])));
+  document.getElementById('div-bars').innerHTML = DIV_ORDER.map(d=>{
+    const va=div24[d], vb=div25[d];
+    const wA=maxDiv>0?(va/maxDiv*100).toFixed(1):0;
+    const wB=maxDiv>0?(vb/maxDiv*100).toFixed(1):0;
+    const p=fmtPct(vb,va), col=chgColor(vb,va);
+    return `<div class="bar-row">
+      <span class="bar-label w140">${d}</span>
+      <div class="bar-track">
+        <div class="bar-a" style="width:${wA}%;background:${DIV_COLORS[d]};opacity:0.5;"></div>
+        <div class="bar-b" style="width:${wB}%;background:${DIV_COLORS[d]};"></div>
+      </div>
+      <span class="bar-vals mono">${fmtK(va)} → ${fmtK(vb)}</span>
+      <span class="bar-chg" style="color:${col}">${p}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('div-chars').innerHTML = [
+    {d:'CP',c:'#60a5fa',note:'Steady, recurring. Highest-volume division. Anchors base revenue but declining.'},
+    {d:'DP',c:'#c084fc',note:'Growing (+8.5%). Short-run, variable data, campaign-driven. Consistent repeats.'},
+    {d:'LFG',c:'#fbbf24',note:'Project-driven, lumpy. Remodel/rebuild spikes then falls. Needs pipeline visibility.'},
+    {d:'AEC',c:'#4ade80',note:'Project-driven (−14.3%). Tied to active construction activity; ebbs with project cadence.'},
+    {d:'HBMaui',c:'#34d399',note:'Stable (+3.5%). Maui market holding with consistent client base.'},
+    {d:'Dispatch',c:'#94a3b8',note:'Quietly growing (+11.9%) as delivery frequency increases.'},
+  ].map(x=>`<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
+    <div style="width:28px;height:28px;background:${x.c}22;border:1px solid ${x.c}44;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:${x.c};flex-shrink:0;">${x.d}</div>
+    <div><div style="font-size:12px;font-weight:500;margin-bottom:2px;">${x.d}</div><div style="font-size:11px;color:var(--muted);line-height:1.5;">${x.note}</div></div>
+  </div>`).join('');
+
+  const lfgTop = [...DIVISIONS].filter(d=>d.d2025.LFG>5000).sort((a,b)=>b.d2025.LFG-a.d2025.LFG).slice(0,12);
+  document.getElementById('lfg-top-body').innerHTML = lfgTop.map(d=>{
+    const diff = d.d2025.LFG - d.d2024.LFG;
+    const sig = diff > 5000 ? pill('Growing','green') : diff < -5000 ? pill('Post-project','amber') : pill('Stable','gray');
+    return `<tr><td style="font-weight:500">${d.name}</td><td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono">${fmtK(d.d2025.LFG)}</td><td>${sig}</td></tr>`;
+  }).join('');
+}
+
+// ─── TRENDS ──────────────────────────────────────────────────────────────────
+let trendCharts = {};
+function renderTrends() {
+  const yrs = [2019,2020,2021,2022,2023,2024,2025];
+  const totals = yrs.map(y=>totalRev(y));
+  const counts = yrs.map(y=>activeCount(y));
+
+  if(trendCharts.total) trendCharts.total.destroy();
+  trendCharts.total = new Chart(document.getElementById('trend-chart'), {
+    type:'line',
+    data:{ labels: yrs.map(yLabel), datasets:[{
+      label:'Revenue', data: totals, borderColor:'#E12B27', backgroundColor:'rgba(225,43,39,0.08)',
+      fill:true, tension:0.3, pointBackgroundColor:'#E12B27', pointRadius:5, borderWidth:2
+    }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>'  '+fmtK(c.parsed.y)}}},
+      scales:{ x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#ffffff88'}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#ffffff88',callback:v=>fmtK(v)}} }}
+  });
+
+  if(trendCharts.seg) trendCharts.seg.destroy();
+  const topSegs = ['AEC','Hospitality','Retail','Food & Beverage','Financial Services','Healthcare'];
+  trendCharts.seg = new Chart(document.getElementById('seg-trend-chart'), {
+    type:'line',
+    data:{ labels: yrs.map(yLabel), datasets: topSegs.map(s=>({
+      label:s, data:yrs.map(y=>ACCOUNTS.filter(a=>a.segment===s).reduce((t,a)=>t+(a[yKey(y)]||0),0)),
+      borderColor: SEG_COLORS[s], backgroundColor:'transparent', tension:0.3,
+      pointRadius:3, borderWidth:2
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index'},
+      plugins:{legend:{labels:{color:'#ffffff88',boxWidth:12,font:{size:11}}}},
+      scales:{ x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#ffffff88'}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#ffffff88',callback:v=>fmtK(v)}} }}
+  });
+
+  if(trendCharts.acct) trendCharts.acct.destroy();
+  trendCharts.acct = new Chart(document.getElementById('acct-trend-chart'), {
+    type:'bar',
+    data:{ labels: yrs.map(yLabel), datasets:[{
+      label:'Active accounts', data: counts,
+      backgroundColor: yrs.map(y=>y===yearA?'#E12B27':y===yearB?'rgba(255,206,2,0.6)':'rgba(255,255,255,0.15)'),
+      borderRadius:4, borderSkipped:false
+    }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{display:false},ticks:{color:'#ffffff88'}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#ffffff88'}} }}
+  });
+}
+
+// ─── ATTRITION ───────────────────────────────────────────────────────────────
+function renderAttrition() {
+  const min = parseInt(document.getElementById('atr-min').value)||10000;
+  const atr = ACCOUNTS.filter(a=>a[yKey(yearA)]>=min && a[yKey(yearB)] < a[yKey(yearA)]*0.5)
+    .sort((a,b)=>(b[yKey(yearA)]-b[yKey(yearB)])-(a[yKey(yearA)]-a[yKey(yearB)]));
+  const lost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
+
+  document.getElementById('atr-h-a').textContent = yLabel(yearA);
+  document.getElementById('atr-h-b').textContent = yLabel(yearB);
+
+  document.getElementById('atr-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-label">At-risk accounts</div>
+      <div class="metric-value" style="color:var(--bad)">${atr.length}</div>
+      <div class="metric-sub">Dropped &gt;50%</div></div>
+    <div class="metric-card"><div class="metric-label">Revenue lost</div>
+      <div class="metric-value" style="color:var(--bad)">${fmtK(lost)}</div>
+      <div class="metric-sub">${yLabel(yearA)} → ${yLabel(yearB)}</div></div>
+    <div class="metric-card"><div class="metric-label">Fully churned</div>
+      <div class="metric-value">${atr.filter(a=>a[yKey(yearB)]===0).length}</div>
+      <div class="metric-sub">Zero revenue in ${yLabel(yearB)}</div></div>
+    <div class="metric-card"><div class="metric-label">Avg loss per account</div>
+      <div class="metric-value">${atr.length?fmtK(lost/atr.length):'—'}</div>
+      <div class="metric-sub"> </div></div>`;
+
+  document.getElementById('atr-body').innerHTML = atr.map(a=>{
+    const va=a[yKey(yearA)], vb=a[yKey(yearB)], lost=va-vb;
+    const pct = Math.round((1-vb/va)*100);
+    const status = vb===0?pill('Churned','red'):pct>=80?pill('Critical','amber'):pill('Warning','gray');
+    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+      <td class="mono">${fmtK(vb)}</td>
+      <td class="mono" style="color:var(--bad)">−${fmtK(lost)}</td><td>${status}</td></tr>`;
+  }).join('');
+}
+
+// ─── EXPANSION ───────────────────────────────────────────────────────────────
+function renderExpansion() {
+  document.getElementById('exp-h-a').textContent = yLabel(yearA);
+  document.getElementById('exp-h-b').textContent = yLabel(yearB);
+  document.getElementById('mod-h-a').textContent = yLabel(yearA);
+  document.getElementById('mod-h-b').textContent = yLabel(yearB);
+
+  const grow = ACCOUNTS.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2)
+    .sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).slice(0,25);
+  document.getElementById('exp-body').innerHTML = grow.map(a=>{
+    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
+    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--good)">${fmtPct(vb,va)}</td></tr>`;
+  }).join('');
+
+  const mod = ACCOUNTS.filter(a=>a[yKey(yearA)]>=20000 && a[yKey(yearB)]>=20000
+    && a[yKey(yearB)] < a[yKey(yearA)]*0.75 && a[yKey(yearB)] >= a[yKey(yearA)]*0.5)
+    .sort((a,b)=>(b[yKey(yearA)]-b[yKey(yearB)])-(a[yKey(yearA)]-a[yKey(yearB)])).slice(0,20);
+  document.getElementById('mod-body').innerHTML = mod.map(a=>{
+    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
+    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--warn)">${fmtPct(vb,va)}</td></tr>`;
+  }).join('');
+}
+
+// ─── LFG ─────────────────────────────────────────────────────────────────────
+function renderLFG() {
+  const drop = [...DIVISIONS].filter(d=>d.d2024.LFG>=10000 && d.d2025.LFG < d.d2024.LFG*0.5)
+    .sort((a,b)=>(b.d2024.LFG-b.d2025.LFG)-(a.d2024.LFG-a.d2025.LFG));
+  document.getElementById('lfg-drop-body').innerHTML = drop.map(d=>{
+    const diff = d.d2024.LFG - d.d2025.LFG;
+    return `<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
+      <td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono" style="color:var(--bad)">${fmtK(d.d2025.LFG)}</td>
+      <td class="mono" style="color:var(--bad)">−${fmtK(diff)}</td></tr>`;
+  }).join('');
+
+  const grow = [...DIVISIONS].filter(d=>d.d2025.LFG>=10000 && d.d2025.LFG > d.d2024.LFG*1.5)
+    .sort((a,b)=>b.d2025.LFG-a.d2025.LFG);
+  document.getElementById('lfg-grow-body').innerHTML = grow.map(d=>{
+    return `<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
+      <td class="mono">${fmtK(d.d2024.LFG)}</td>
+      <td class="mono" style="color:var(--good)">${fmtK(d.d2025.LFG)}</td></tr>`;
+  }).join('');
+}
+
+// ─── WHITESPACE ──────────────────────────────────────────────────────────────
+const WHITESPACE = [
+  {name:'Sheraton Waikiki / Le Meridien / W Hotels',seg:'Hospitality',opp:'Largest hotel footprint in Hawaii — zero record',pri:'high'},
+  {name:'Hawaii Tourism Authority',seg:'Government',opp:'Was $283k in 2022. Fully dark since. Prime reactivation.',pri:'high'},
+  {name:'First Hawaiian Bank',seg:'Financial Services',opp:'$3.6k vs Bank of Hawaii $113k. FHB has 50+ branches.',pri:'high'},
+  {name:'Queens Medical Center',seg:'Healthcare',opp:'Largest private hospital in Hawaii. Zero record.',pri:'high'},
+  {name:'Hyatt portfolio (Grand Hyatt / Andaz)',seg:'Hospitality',opp:'Was $31k in 2024, now $0 in 2025. Recent churn.',pri:'high'},
+  {name:'Marriott Ko Olina / JW Marriott',seg:'Hospitality',opp:'Marriott in system but $0 in 2025. Multiple properties.',pri:'high'},
+  {name:'Aulani Disney Resort',seg:'Hospitality',opp:'Disney Shared Svcs declining. Aulani not in system.',pri:'high'},
+  {name:'Ward Village (residential)',seg:'Real Estate',opp:'HH Construction growing fast. Ward Village condos uncaptured.',pri:'high'},
+  {name:'Safeway Hawaii',seg:'Retail',opp:'Major grocery chain. EDDM, POS, in-store graphics opportunity.',pri:'med'},
+  {name:'Tripler / Hickam / JBPHH',seg:'Government',opp:'Large base print needs. Nearly nothing in system.',pri:'med'},
+  {name:'Central Pacific Bank',seg:'Financial Services',opp:'$12k 2025 — CPB has 30+ branches, Key Accounts candidate.',pri:'med'},
+  {name:'Grand Wailea Resort',seg:'Hospitality',opp:'Was $60k in 2023, collapsed to $9k — re-engagement.',pri:'med'},
+];
+function renderWhitespace() {
+  document.getElementById('ws-body').innerHTML = WHITESPACE.map(w=>`
+    <tr><td style="font-weight:500">${w.name}</td><td>${pill(w.seg,'gray')}</td>
+      <td style="color:var(--muted);font-size:11px">${w.opp}</td>
+      <td>${w.pri==='high'?pill('High','red'):pill('Medium','amber')}</td></tr>`).join('');
+
+  // Dormant accounts: had $20k+ in 2022 or 2023, zero in 2024 and 2025
+  const dormant = ACCOUNTS.filter(a=>
+    (a.y2022>=20000||a.y2023>=20000) && a.y2024===0 && a.y2025===0
+  ).map(a=>{
+    const peak = Math.max(a.y2019,a.y2020,a.y2021,a.y2022,a.y2023);
+    const peakY = [2019,2020,2021,2022,2023].find(y=>a[yKey(y)]===peak);
+    const lastY = [2023,2022,2021,2020,2019].find(y=>a[yKey(y)]>0);
+    return {...a, peak, peakY, lastY};
+  }).sort((a,b)=>b.peak-a.peak).slice(0,20);
+
+  document.getElementById('dormant-body').innerHTML = dormant.map(d=>`
+    <tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.industry}</td>
+      <td class="mono">${d.peakY}</td><td class="mono">${fmtK(d.peak)}</td>
+      <td class="mono">${d.lastY||'—'}</td></tr>`).join('');
+}
+
+// ─── REPS ─────────────────────────────────────────────────────────────────────
+function renderReps() {
+  const selA = document.getElementById('rep-year-a');
+  if(!selA.options.length) {
+    YEARS.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=yLabel(y); if(y===yearB)o.selected=true; selA.appendChild(o); });
+  }
+  const yr = parseInt(selA.value)||yearB;
+
+  const repData = ACTIVE_REPS.map(r=>{
+    const accts = ACCOUNTS.filter(a=>a.rep===r);
+    const va = accts.reduce((s,a)=>s+(a[yKey(yearA)]||0),0);
+    const vb = accts.reduce((s,a)=>s+(a[yKey(yr)]||0),0);
+    return {rep:r, va, vb, count: accts.filter(a=>(a[yKey(yr)]||0)>0).length};
+  }).sort((a,b)=>b.vb-a.vb);
+
+  const max = Math.max(...repData.map(r=>Math.max(r.va,r.vb)));
+  document.getElementById('rep-overview-bars').innerHTML = repData.map(r=>{
+    return barRowHTML(r.rep, r.va, r.vb, max, 'w140');
+  }).join('');
+
+  const repSel = document.getElementById('rep-select');
+  if(!repSel.options.length) {
+    ACTIVE_REPS.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; repSel.appendChild(o); });
+  }
+  renderRepDetail();
+}
+
+function renderRepDetail() {
+  const rep = document.getElementById('rep-select').value || ACTIVE_REPS[0];
+  const repAccts = ACCOUNTS.filter(a=>a.rep===rep);
+  const va = repAccts.reduce((s,a)=>s+(a[yKey(yearA)]||0),0);
+  const vb = repAccts.reduce((s,a)=>s+(a[yKey(yearB)]||0),0);
+  const active = repAccts.filter(a=>(a[yKey(yearB)]||0)>0).length;
+  const atr = repAccts.filter(a=>a[yKey(yearA)]>=5000 && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
+  const atrLost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
+  const top5 = [...repAccts].sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).filter(a=>(a[yKey(yearB)]||0)>0).slice(0,8);
+
+  // Seg breakdown
+  const segRev = {};
+  repAccts.forEach(a=>{ segRev[a.segment]=(segRev[a.segment]||0)+(a[yKey(yearB)]||0); });
+  const segSorted = Object.entries(segRev).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+
+  document.getElementById('rep-detail').innerHTML = `
+    <div class="rep-stats">
+      <div class="rep-stat"><div class="rep-stat-label">${yLabel(yearB)} revenue</div><div class="rep-stat-val">${fmtK(vb)}</div></div>
+      <div class="rep-stat"><div class="rep-stat-label">vs ${yLabel(yearA)}</div><div class="rep-stat-val" style="color:${chgColor(vb,va)}">${fmtPct(vb,va)}</div></div>
+      <div class="rep-stat"><div class="rep-stat-label">Active accounts</div><div class="rep-stat-val">${active}</div></div>
+      <div class="rep-stat"><div class="rep-stat-label">Attrition risk</div><div class="rep-stat-val" style="color:var(--bad)">${fmtK(atrLost)}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Top accounts (${yLabel(yearB)})</div>
+        <table style="font-size:12px;"><tbody>${top5.map(a=>{
+          const va2=a[yKey(yearA)], vb2=a[yKey(yearB)];
+          return `<tr><td style="font-weight:500;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</td>
+            <td class="mono" style="text-align:right">${fmtK(vb2)}</td>
+            <td class="mono" style="color:${chgColor(vb2,va2)};text-align:right">${fmtPct(vb2,va2)}</td></tr>`;
+        }).join('')}</tbody></table>
+      </div>
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Segment mix (${yLabel(yearB)})</div>
+        ${segSorted.slice(0,6).map(([s,v])=>{
+          const maxSV = segSorted[0][1];
+          return `<div class="bar-row" style="margin-bottom:6px;">
+            <span class="bar-label" style="width:110px;font-size:11px;">${s}</span>
+            <div class="bar-track"><div class="bar-b" style="width:${(v/maxSV*100).toFixed(0)}%;background:${SEG_COLORS[s]||'#888'};opacity:0.7;"></div></div>
+            <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;width:60px;text-align:right">${fmtK(v)}</span>
+          </div>`;
+        }).join('')}
+        ${atr.length>0?`<div style="margin-top:10px;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px;">At-risk accounts</div>
+        ${atr.slice(0,5).map(a=>`<div style="font-size:11px;display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);"><span>${a.name}</span><span style="color:var(--bad);font-family:'DM Mono',monospace">−${fmtK(a[yKey(yearA)]-a[yKey(yearB)])}</span></div>`).join('')}`:''}
+      </div>
+    </div>`;
+}
+
+// ─── ACCOUNTS SEARCH ─────────────────────────────────────────────────────────
+function renderAccounts() {
+  const q = (document.getElementById('acct-search').value||'').toLowerCase();
+  const filtered = q.length>1
+    ? ACCOUNTS.filter(a=>a.name.toLowerCase().includes(q)||a.industry.toLowerCase().includes(q)||(a.rep&&a.rep.toLowerCase().includes(q)))
+    : [...ACCOUNTS].sort((a,b)=>b.y2025-a.y2025).slice(0,100);
+
+  const sorted = filtered.sort((a,b)=>b.y2025-a.y2025).slice(0,80);
+  document.getElementById('acct-body').innerHTML = sorted.map(a=>{
+    const vals = [2019,2020,2021,2022,2023,2024,2025].map(y=>
+      `<td class="mono" style="color:${a[yKey(y)]>0?'var(--text)':'var(--dim)'}">${a[yKey(y)]>0?fmtK(a[yKey(y)]):'—'}</td>`
+    ).join('');
+    // Simple sparkline — ascii-style indicator
+    const yrs=[2019,2020,2021,2022,2023,2024,2025].map(y=>a[yKey(y)]);
+    const mx=Math.max(...yrs);
+    const trend = mx>0 ? (a.y2025>=a.y2024?'<span style="color:var(--good)">↑</span>':'<span style="color:var(--bad)">↓</span>') : '—';
+    return `<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+      <td style="color:var(--muted);white-space:nowrap">${a.rep||'—'}</td>
+      <td style="color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.industry}</td>
+      ${vals}<td>${trend}</td></tr>`;
+  }).join('');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+initYearPills();
+renderOverview();
+</script>
+</body>
+</html>
