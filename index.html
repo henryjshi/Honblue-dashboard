@@ -221,6 +221,18 @@
     <div class="yl-item"><div class="yl-dot" style="background:var(--red);"></div><span id="leg-a">2024 (base)</span></div>
     <div class="yl-item"><div class="yl-dot" style="background:var(--yellow);opacity:0.7;"></div><span id="leg-b">2025 (compare)</span></div>
   </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+    <span class="year-bar-label">Division</span>
+    <select id="div-filter" onchange="activeDivFilter=this.value;_divMap=null;refreshAll()" style="font-size:11px;padding:4px 8px;">
+      <option value="">All Divisions</option>
+      <option value="CP">CP</option>
+      <option value="LFG">LFG</option>
+      <option value="AEC">AEC</option>
+      <option value="DP">DP</option>
+      <option value="HBMaui">HBMaui</option>
+      <option value="Dispatch">Dispatch</option>
+    </select>
+  </div>
 </div>
 
 <div class="main">
@@ -289,10 +301,7 @@
         <div class="panel">
           <div class="panel-header"><div><div class="panel-title">Top accounts</div></div></div>
           <div class="panel-body">
-            <div class="tbl-wrap"><table id="top-accounts-tbl">
-              <thead><tr><th>Account</th><th>Segment</th><th id="ta-h-a">2024</th><th id="ta-h-b">2025</th><th>Chg</th></tr></thead>
-              <tbody id="top-accounts-body"></tbody>
-            </table></div>
+            <div id="top-accts-wrap" class="tbl-wrap"></div>
           </div>
         </div>
       </div>
@@ -307,10 +316,7 @@
       <div class="panel">
         <div class="panel-header"><div class="panel-title">Top accounts per segment</div><select id="seg-select" onchange="renderSegTop()"></select></div>
         <div class="panel-body">
-          <div class="tbl-wrap"><table>
-            <thead><tr><th>Account</th><th>Rep</th><th id="sth-a">Base</th><th id="sth-b">Compare</th><th>Δ</th></tr></thead>
-            <tbody id="seg-top-body"></tbody>
-          </table></div>
+          <div id="seg-top-wrap" class="tbl-wrap"></div>
         </div>
       </div>
     </div>
@@ -329,12 +335,7 @@
         </div>
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Top LFG accounts 2025</div></div>
-          <div class="panel-body">
-            <div class="tbl-wrap"><table>
-              <thead><tr><th>Account</th><th>LFG 2024</th><th>LFG 2025</th><th>Signal</th></tr></thead>
-              <tbody id="lfg-top-body"></tbody>
-            </table></div>
-          </div>
+          <div id="lfg-top-wrap" class="panel-body tbl-wrap"></div>
         </div>
       </div>
     </div>
@@ -377,17 +378,11 @@
     <div id="pane-expansion" class="pane">
       <div class="panel">
         <div class="panel-header"><div><div class="panel-title">Growth accounts</div><div class="panel-sub">Active accounts with &gt;20% growth and compare-year spend ≥$30k</div></div></div>
-        <div class="panel-body tbl-wrap">
-          <table><thead><tr><th>Account</th><th>Rep</th><th>Segment</th><th id="exp-h-a">Base</th><th id="exp-h-b">Compare</th><th>Growth</th></tr></thead>
-          <tbody id="exp-body"></tbody></table>
-        </div>
+        <div id="exp-wrap" class="panel-body tbl-wrap"></div>
       </div>
       <div class="panel">
         <div class="panel-header"><div><div class="panel-title">Moderate decline — still active</div><div class="panel-sub">25–50% drop, compare-year spend ≥$20k — warm outreach candidates</div></div></div>
-        <div class="panel-body tbl-wrap">
-          <table><thead><tr><th>Account</th><th>Rep</th><th>Segment</th><th id="mod-h-a">Base</th><th id="mod-h-b">Compare</th><th>Δ</th></tr></thead>
-          <tbody id="mod-body"></tbody></table>
-        </div>
+        <div id="mod-wrap" class="panel-body tbl-wrap"></div>
       </div>
     </div>
 
@@ -397,17 +392,11 @@
       <div class="two-col">
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Post-project fall-off (2024→2025)</div></div>
-          <div class="panel-body tbl-wrap">
-            <table><thead><tr><th>Account</th><th>Rep</th><th>LFG 2024</th><th>LFG 2025</th><th>Drop</th></tr></thead>
-            <tbody id="lfg-drop-body"></tbody></table>
-          </div>
+          <div id="lfg-drop-wrap" class="panel-body tbl-wrap"></div>
         </div>
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Active LFG projects (growing 2025)</div></div>
-          <div class="panel-body tbl-wrap">
-            <table><thead><tr><th>Account</th><th>Rep</th><th>LFG 2024</th><th>LFG 2025</th></tr></thead>
-            <tbody id="lfg-grow-body"></tbody></table>
-          </div>
+          <div id="lfg-grow-wrap" class="panel-body tbl-wrap"></div>
         </div>
       </div>
     </div>
@@ -416,17 +405,11 @@
     <div id="pane-whitespace" class="pane">
       <div class="panel">
         <div class="panel-header"><div><div class="panel-title">Whitespace — zero or near-zero revenue accounts</div><div class="panel-sub">Major Hawaii brands matching HONBLUE ICPs with no active relationship</div></div></div>
-        <div class="panel-body tbl-wrap">
-          <table><thead><tr><th>Brand / Account</th><th>Segment</th><th>Opportunity</th><th>Priority</th></tr></thead>
-          <tbody id="ws-body"></tbody></table>
-        </div>
+        <div id="ws-wrap" class="panel-body tbl-wrap"></div>
       </div>
       <div class="panel">
         <div class="panel-header"><div><div class="panel-title">Dormant accounts</div><div class="panel-sub">Had significant revenue 2+ years ago, now zero — reactivation targets</div></div></div>
-        <div class="panel-body tbl-wrap">
-          <table><thead><tr><th>Account</th><th>Industry</th><th>Peak year</th><th>Peak revenue</th><th>Last active</th></tr></thead>
-          <tbody id="dormant-body"></tbody></table>
-        </div>
+        <div id="dormant-wrap" class="panel-body tbl-wrap"></div>
       </div>
     </div>
 
@@ -496,6 +479,8 @@
 <script>
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let yearA = 2024, yearB = 2025;
+let activeDivFilter = '';
+const TABLE_SORT = {};
 const YEARS = [2019,2020,2021,2022,2023,2024,2025,2026];
 const YEAR_LABELS = {2026: '2026*'};
 const yLabel = y => YEAR_LABELS[y] || String(y);
@@ -527,6 +512,53 @@ function fmtPct(a,b) {
 }
 function chgColor(a,b) { return a>=b?'var(--good)':'var(--bad)'; }
 function pill(txt, cls) { return `<span class="pill pill-${cls}">${txt}</span>`; }
+
+// ─── DIVISION FILTER & SORT HELPERS ─────────────────────────────────────────
+let _divMap = null;
+function getDivMap() {
+  if (_divMap) return _divMap;
+  _divMap = {};
+  try {
+    if (typeof DIVISIONS !== 'undefined') {
+      DIVISIONS.forEach(d => {
+        const yr = d.d2025 || {};
+        const divs = Object.entries(yr).filter(([k,v]) => v > 0 && k !== 'Other');
+        _divMap[d.name] = divs.sort((a,b) => b[1]-a[1])[0]?.[0] || 'Other';
+      });
+    }
+  } catch(e) {}
+  return _divMap;
+}
+
+function getAccounts() {
+  if (!activeDivFilter) return ACCOUNTS;
+  const map = getDivMap();
+  return ACCOUNTS.filter(a => (map[a.name] || 'Other') === activeDivFilter);
+}
+
+function clickSort(id, col, fn) {
+  const s = TABLE_SORT[id] || { col: null, dir: -1 };
+  s.dir = s.col === col ? s.dir * -1 : -1;
+  s.col = col;
+  TABLE_SORT[id] = s;
+  fn();
+}
+
+function sortIcn(id, col) {
+  const s = TABLE_SORT[id];
+  if (!s || s.col !== col) return '<span style="color:var(--dim);font-size:9px;margin-left:2px">⇅</span>';
+  return `<span style="color:var(--muted);font-size:9px;margin-left:2px">${s.dir < 0 ? '▼' : '▲'}</span>`;
+}
+
+function sortArr(arr, id, colMap) {
+  const s = TABLE_SORT[id];
+  if (!s || !s.col || !colMap[s.col]) return arr;
+  const accessor = colMap[s.col];
+  return [...arr].sort((a, b) => {
+    const va = accessor(a), vb = accessor(b);
+    return typeof va === 'string' ? s.dir * va.localeCompare(vb) : s.dir * (va - vb);
+  });
+}
 
 // ─── YEAR PILLS ─────────────────────────────────────────────────────────────
 function initYearPills() {
@@ -592,12 +624,12 @@ function refreshAll() {
 function segTotals(y) {
   const out = {};
   SEGS.forEach(s => { out[s] = 0; });
-  ACCOUNTS.forEach(a => { if(out[a.segment]!==undefined) out[a.segment]+=a[yKey(y)]||0; });
+  getAccounts().forEach(a => { if(out[a.segment]!==undefined) out[a.segment]+=a[yKey(y)]||0; });
   return out;
 }
 
-function totalRev(y) { return ACCOUNTS.reduce((s,a)=>s+(a[yKey(y)]||0),0); }
-function activeCount(y) { return ACCOUNTS.filter(a=>(a[yKey(y)]||0)>0).length; }
+function totalRev(y) { return getAccounts().reduce((s,a)=>s+(a[yKey(y)]||0),0); }
+function activeCount(y) { return getAccounts().filter(a=>(a[yKey(y)]||0)>0).length; }
 
 function barRowHTML(label, vA, vB, maxVal, labelWidth='w140') {
   const wA = maxVal>0?(vA/maxVal*100).toFixed(1):0;
@@ -617,17 +649,15 @@ function barRowHTML(label, vA, vB, maxVal, labelWidth='w140') {
 
 // ─── OVERVIEW ────────────────────────────────────────────────────────────────
 function renderOverview() {
+  const accts = getAccounts();
   const ra = totalRev(yearA), rb = totalRev(yearB);
   const ca = activeCount(yearA), cb = activeCount(yearB);
   const pctChg = fmtPct(rb, ra);
   const acctChg = cb - ca;
 
-  // Attrition metric
-  const atr = ACCOUNTS.filter(a=>a[yKey(yearA)]>=10000 && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
+  const atr = accts.filter(a=>a[yKey(yearA)]>=10000 && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
   const atrLost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
-
-  // Growth metric
-  const grow = ACCOUNTS.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2);
+  const grow = accts.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2);
 
   document.getElementById('overview-metrics').innerHTML = `
     <div class="metric-card">
@@ -651,23 +681,28 @@ function renderOverview() {
       <div class="metric-sub">&gt;20% growth &amp; ≥$30k</div>
     </div>`;
 
-  // Segment bars
   const sa = segTotals(yearA), sb = segTotals(yearB);
   const maxSeg = Math.max(...Object.values(sa), ...Object.values(sb));
   const sorted = [...SEGS].sort((x,y)=>sb[y]-sb[x]);
   document.getElementById('seg-bars-overview').innerHTML = sorted.map(s=>barRowHTML(s, sa[s], sb[s], maxSeg)).join('');
 
-  // Top accounts table
-  document.getElementById('ta-h-a').textContent = yLabel(yearA);
-  document.getElementById('ta-h-b').textContent = yLabel(yearB);
-  const top = [...ACCOUNTS].sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).filter(a=>a[yKey(yearB)]>0).slice(0,20);
-  document.getElementById('top-accounts-body').innerHTML = top.map(a=>{
-    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
-    const p=fmtPct(vb,va), col=chgColor(vb,va);
-    return `<tr><td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
-      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
-      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:${col}">${p}</td></tr>`;
-  }).join('');
+  // Top accounts — sortable
+  if (!TABLE_SORT['top-accts']) TABLE_SORT['top-accts'] = { col: 'vb', dir: -1 };
+  const TID = 'top-accts';
+  const topData = sortArr(
+    accts.filter(a=>a[yKey(yearB)]>0||a[yKey(yearA)]>0).slice(0,200),
+    TID,
+    { name: a=>a.name, seg: a=>a.segment, va: a=>a[yKey(yearA)]||0, vb: a=>a[yKey(yearB)]||0, chg: a=>(a[yKey(yearA)]>0?(a[yKey(yearB)]-a[yKey(yearA)])/a[yKey(yearA)]:0) }
+  ).slice(0,25);
+  const th = (col,label) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderOverview)" style="white-space:nowrap">${label}${sortIcn(TID,col)}</th>`;
+  document.getElementById('top-accts-wrap').innerHTML = `<table>
+    <thead><tr><th>Account</th>${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('chg','Chg')}</tr></thead>
+    <tbody>${topData.map(a=>{
+      const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0;
+      return `<tr><td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+        <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+        <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:${chgColor(vb,va)}">${fmtPct(vb,va)}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 // ─── SEGMENTS ────────────────────────────────────────────────────────────────
@@ -686,16 +721,19 @@ function renderSegments() {
 
 function renderSegTop() {
   const seg = document.getElementById('seg-select').value || SEGS[0];
-  document.getElementById('sth-a').textContent = yLabel(yearA);
-  document.getElementById('sth-b').textContent = yLabel(yearB);
-  const accts = ACCOUNTS.filter(a=>a.segment===seg).sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).filter(a=>a[yKey(yearB)]>0||a[yKey(yearA)]>0).slice(0,20);
-  document.getElementById('seg-top-body').innerHTML = accts.map(a=>{
-    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
-    const p=fmtPct(vb,va), col=chgColor(vb,va);
-    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
-      <td class="mono">${fmtK(va)}</td><td class="mono">${fmtK(vb)}</td>
-      <td class="mono" style="color:${col}">${p}</td></tr>`;
-  }).join('');
+  const TID = 'seg-top';
+  if (!TABLE_SORT[TID]) TABLE_SORT[TID] = { col: 'vb', dir: -1 };
+  const raw = getAccounts().filter(a=>a.segment===seg && (a[yKey(yearB)]>0||a[yKey(yearA)]>0)).slice(0,200);
+  const accts = sortArr(raw, TID, { name:a=>a.name, rep:a=>a.rep||'', va:a=>a[yKey(yearA)]||0, vb:a=>a[yKey(yearB)]||0, chg:a=>(a[yKey(yearA)]>0?(a[yKey(yearB)]-a[yKey(yearA)])/a[yKey(yearA)]:0) }).slice(0,25);
+  const th = (col,lbl) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderSegTop)">${lbl}${sortIcn(TID,col)}</th>`;
+  document.getElementById('seg-top-wrap').innerHTML = `<table>
+    <thead><tr><th>Account</th>${th('rep','Rep')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('chg','Δ')}</tr></thead>
+    <tbody>${accts.map(a=>{
+      const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0;
+      return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+        <td class="mono">${fmtK(va)}</td><td class="mono">${fmtK(vb)}</td>
+        <td class="mono" style="color:${chgColor(vb,va)}">${fmtPct(vb,va)}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 // ─── DIVISIONS ───────────────────────────────────────────────────────────────
@@ -736,12 +774,17 @@ function renderDivisions() {
     <div><div style="font-size:12px;font-weight:500;margin-bottom:2px;">${x.d}</div><div style="font-size:11px;color:var(--muted);line-height:1.5;">${x.note}</div></div>
   </div>`).join('');
 
-  const lfgTop = [...DIVISIONS].filter(d=>d.d2025.LFG>5000).sort((a,b)=>b.d2025.LFG-a.d2025.LFG).slice(0,12);
-  document.getElementById('lfg-top-body').innerHTML = lfgTop.map(d=>{
-    const diff = d.d2025.LFG - d.d2024.LFG;
-    const sig = diff > 5000 ? pill('Growing','green') : diff < -5000 ? pill('Post-project','amber') : pill('Stable','gray');
-    return `<tr><td style="font-weight:500">${d.name}</td><td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono">${fmtK(d.d2025.LFG)}</td><td>${sig}</td></tr>`;
-  }).join('');
+  if (!TABLE_SORT['lfg-top']) TABLE_SORT['lfg-top'] = { col: 'v25', dir: -1 };
+  const lfgTopRaw = [...DIVISIONS].filter(d=>d.d2025.LFG>5000);
+  const lfgTop = sortArr(lfgTopRaw, 'lfg-top', { name:d=>d.name, v24:d=>d.d2024.LFG, v25:d=>d.d2025.LFG, chg:d=>d.d2025.LFG-d.d2024.LFG }).slice(0,15);
+  const thLT = (col,lbl) => `<th class="sortable" onclick="clickSort('lfg-top','${col}',renderDivisions)" style="white-space:nowrap">${lbl}${sortIcn('lfg-top',col)}</th>`;
+  document.getElementById('lfg-top-wrap').innerHTML = `<table>
+    <thead><tr>${thLT('name','Account')}${thLT('v24','LFG 2024')}${thLT('v25','LFG 2025')}${thLT('chg','Change')}<th>Signal</th></tr></thead>
+    <tbody>${lfgTop.map(d=>{
+      const diff=d.d2025.LFG-d.d2024.LFG;
+      const sig=diff>5000?pill('Growing','green'):diff<-5000?pill('Post-project','amber'):pill('Stable','gray');
+      return `<tr><td style="font-weight:500">${d.name}</td><td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono">${fmtK(d.d2025.LFG)}</td><td class="mono" style="color:${chgColor(d.d2025.LFG,d.d2024.LFG)}">${diff>0?'+':''}${fmtK(Math.abs(diff))}</td><td>${sig}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 // ─── TRENDS ──────────────────────────────────────────────────────────────────
@@ -769,7 +812,7 @@ function renderTrends() {
   trendCharts.seg = new Chart(document.getElementById('seg-trend-chart'), {
     type:'line',
     data:{ labels: yrs.map(yLabel), datasets: topSegs.map(s=>({
-      label:s, data:yrs.map(y=>ACCOUNTS.filter(a=>a.segment===s).reduce((t,a)=>t+(a[yKey(y)]||0),0)),
+      label:s, data:yrs.map(y=>getAccounts().filter(a=>a.segment===s).reduce((t,a)=>t+(a[yKey(y)]||0),0)),
       borderColor: SEG_COLORS[s], backgroundColor:'transparent', tension:0.3,
       pointRadius:3, borderWidth:2
     }))},
@@ -795,84 +838,100 @@ function renderTrends() {
 
 // ─── ATTRITION ───────────────────────────────────────────────────────────────
 function renderAttrition() {
+  const TID = 'atr';
+  if (!TABLE_SORT[TID]) TABLE_SORT[TID] = { col: 'lost', dir: -1 };
   const min = parseInt(document.getElementById('atr-min').value)||10000;
-  const atr = ACCOUNTS.filter(a=>a[yKey(yearA)]>=min && a[yKey(yearB)] < a[yKey(yearA)]*0.5)
-    .sort((a,b)=>(b[yKey(yearA)]-b[yKey(yearB)])-(a[yKey(yearA)]-a[yKey(yearB)]));
-  const lost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
-
-  document.getElementById('atr-h-a').textContent = yLabel(yearA);
-  document.getElementById('atr-h-b').textContent = yLabel(yearB);
+  const raw = getAccounts().filter(a=>a[yKey(yearA)]>=min && a[yKey(yearB)] < a[yKey(yearA)]*0.5);
+  const atr = sortArr(raw, TID, {
+    name: a=>a.name, rep: a=>a.rep||'', seg: a=>a.segment,
+    va: a=>a[yKey(yearA)]||0, vb: a=>a[yKey(yearB)]||0,
+    lost: a=>(a[yKey(yearA)]||0)-(a[yKey(yearB)]||0),
+    pct: a=>a[yKey(yearA)]>0?1-a[yKey(yearB)]/a[yKey(yearA)]:0
+  });
+  const totalLost = atr.reduce((s,a)=>s+(a[yKey(yearA)]-a[yKey(yearB)]),0);
 
   document.getElementById('atr-metrics').innerHTML = `
     <div class="metric-card"><div class="metric-label">At-risk accounts</div>
       <div class="metric-value" style="color:var(--bad)">${atr.length}</div>
       <div class="metric-sub">Dropped &gt;50%</div></div>
     <div class="metric-card"><div class="metric-label">Revenue lost</div>
-      <div class="metric-value" style="color:var(--bad)">${fmtK(lost)}</div>
+      <div class="metric-value" style="color:var(--bad)">${fmtK(totalLost)}</div>
       <div class="metric-sub">${yLabel(yearA)} → ${yLabel(yearB)}</div></div>
     <div class="metric-card"><div class="metric-label">Fully churned</div>
       <div class="metric-value">${atr.filter(a=>a[yKey(yearB)]===0).length}</div>
       <div class="metric-sub">Zero revenue in ${yLabel(yearB)}</div></div>
     <div class="metric-card"><div class="metric-label">Avg loss per account</div>
-      <div class="metric-value">${atr.length?fmtK(lost/atr.length):'—'}</div>
+      <div class="metric-value">${atr.length?fmtK(totalLost/atr.length):'—'}</div>
       <div class="metric-sub"> </div></div>`;
 
-  document.getElementById('atr-body').innerHTML = atr.map(a=>{
-    const va=a[yKey(yearA)], vb=a[yKey(yearB)], lost=va-vb;
-    const pct = Math.round((1-vb/va)*100);
-    const status = vb===0?pill('Churned','red'):pct>=80?pill('Critical','amber'):pill('Warning','gray');
-    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
-      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
-      <td class="mono">${fmtK(vb)}</td>
-      <td class="mono" style="color:var(--bad)">−${fmtK(lost)}</td><td>${status}</td></tr>`;
-  }).join('');
+  const th = (col,lbl) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderAttrition)" style="white-space:nowrap">${lbl}${sortIcn(TID,col)}</th>`;
+  document.getElementById('atr-wrap').innerHTML = `<table>
+    <thead><tr>${th('name','Account')}${th('rep','Rep')}${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('lost','Lost')}${th('pct','Drop %')}<th>Status</th></tr></thead>
+    <tbody>${atr.map(a=>{
+      const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0, lostAmt=va-vb;
+      const pct = Math.round((1-vb/va)*100);
+      const status = vb===0?pill('Churned','red'):pct>=80?pill('Critical','amber'):pill('Warning','gray');
+      return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+        <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+        <td class="mono">${fmtK(vb)}</td>
+        <td class="mono" style="color:var(--bad)">−${fmtK(lostAmt)}</td><td>${status}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 // ─── EXPANSION ───────────────────────────────────────────────────────────────
 function renderExpansion() {
-  document.getElementById('exp-h-a').textContent = yLabel(yearA);
-  document.getElementById('exp-h-b').textContent = yLabel(yearB);
-  document.getElementById('mod-h-a').textContent = yLabel(yearA);
-  document.getElementById('mod-h-b').textContent = yLabel(yearB);
+  const accts = getAccounts();
+  const makeTable = (TID, data, fn) => {
+    if (!TABLE_SORT[TID]) TABLE_SORT[TID] = { col: 'vb', dir: -1 };
+    const rows = sortArr(data, TID, { name:a=>a.name, rep:a=>a.rep||'', seg:a=>a.segment, va:a=>a[yKey(yearA)]||0, vb:a=>a[yKey(yearB)]||0, chg:a=>(a[yKey(yearA)]>0?(a[yKey(yearB)]-a[yKey(yearA)])/a[yKey(yearA)]:0) });
+    const th = (col,lbl) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderExpansion)" style="white-space:nowrap">${lbl}${sortIcn(TID,col)}</th>`;
+    return `<table><thead><tr><th>Account</th>${th('rep','Rep')}${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('chg','Chg')}</tr></thead>
+      <tbody>${rows.map(fn).join('')}</tbody></table>`;
+  };
 
-  const grow = ACCOUNTS.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2)
-    .sort((a,b)=>b[yKey(yearB)]-a[yKey(yearB)]).slice(0,25);
-  document.getElementById('exp-body').innerHTML = grow.map(a=>{
-    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
+  const grow = accts.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2).slice(0,100);
+  document.getElementById('exp-wrap').innerHTML = makeTable('exp', grow, a=>{
+    const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0;
     return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
       <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
       <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--good)">${fmtPct(vb,va)}</td></tr>`;
-  }).join('');
+  });
 
-  const mod = ACCOUNTS.filter(a=>a[yKey(yearA)]>=20000 && a[yKey(yearB)]>=20000
-    && a[yKey(yearB)] < a[yKey(yearA)]*0.75 && a[yKey(yearB)] >= a[yKey(yearA)]*0.5)
-    .sort((a,b)=>(b[yKey(yearA)]-b[yKey(yearB)])-(a[yKey(yearA)]-a[yKey(yearB)])).slice(0,20);
-  document.getElementById('mod-body').innerHTML = mod.map(a=>{
-    const va=a[yKey(yearA)], vb=a[yKey(yearB)];
+  const mod = accts.filter(a=>a[yKey(yearA)]>=20000 && a[yKey(yearB)]>=20000
+    && a[yKey(yearB)] < a[yKey(yearA)]*0.75 && a[yKey(yearB)] >= a[yKey(yearA)]*0.5).slice(0,100);
+  document.getElementById('mod-wrap').innerHTML = makeTable('mod', mod, a=>{
+    const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0;
     return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
       <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
       <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--warn)">${fmtPct(vb,va)}</td></tr>`;
-  }).join('');
+  });
 }
 
 // ─── LFG ─────────────────────────────────────────────────────────────────────
 function renderLFG() {
-  const drop = [...DIVISIONS].filter(d=>d.d2024.LFG>=10000 && d.d2025.LFG < d.d2024.LFG*0.5)
-    .sort((a,b)=>(b.d2024.LFG-b.d2025.LFG)-(a.d2024.LFG-a.d2025.LFG));
-  document.getElementById('lfg-drop-body').innerHTML = drop.map(d=>{
-    const diff = d.d2024.LFG - d.d2025.LFG;
-    return `<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
-      <td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono" style="color:var(--bad)">${fmtK(d.d2025.LFG)}</td>
-      <td class="mono" style="color:var(--bad)">−${fmtK(diff)}</td></tr>`;
-  }).join('');
+  if (!TABLE_SORT['lfg-drop']) TABLE_SORT['lfg-drop'] = { col: 'drop', dir: -1 };
+  if (!TABLE_SORT['lfg-grow']) TABLE_SORT['lfg-grow'] = { col: 'v25', dir: -1 };
 
-  const grow = [...DIVISIONS].filter(d=>d.d2025.LFG>=10000 && d.d2025.LFG > d.d2024.LFG*1.5)
-    .sort((a,b)=>b.d2025.LFG-a.d2025.LFG);
-  document.getElementById('lfg-grow-body').innerHTML = grow.map(d=>{
-    return `<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
+  const dropData = sortArr([...DIVISIONS].filter(d=>d.d2024.LFG>=10000 && d.d2025.LFG < d.d2024.LFG*0.5),
+    'lfg-drop', { name:d=>d.name, rep:d=>d.rep||'', v24:d=>d.d2024.LFG, v25:d=>d.d2025.LFG, drop:d=>d.d2024.LFG-d.d2025.LFG });
+  const thD = (col,lbl) => `<th class="sortable" onclick="clickSort('lfg-drop','${col}',renderLFG)" style="white-space:nowrap">${lbl}${sortIcn('lfg-drop',col)}</th>`;
+  document.getElementById('lfg-drop-wrap').innerHTML = `<table>
+    <thead><tr>${thD('name','Account')}${thD('rep','Rep')}${thD('v24','LFG 2024')}${thD('v25','LFG 2025')}${thD('drop','Drop')}</tr></thead>
+    <tbody>${dropData.map(d=>{
+      const diff=d.d2024.LFG-d.d2025.LFG;
+      return `<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
+        <td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono" style="color:var(--bad)">${fmtK(d.d2025.LFG)}</td>
+        <td class="mono" style="color:var(--bad)">−${fmtK(diff)}</td></tr>`;
+    }).join('')}</tbody></table>`;
+
+  const growData = sortArr([...DIVISIONS].filter(d=>d.d2025.LFG>=10000 && d.d2025.LFG > d.d2024.LFG*1.5),
+    'lfg-grow', { name:d=>d.name, rep:d=>d.rep||'', v24:d=>d.d2024.LFG, v25:d=>d.d2025.LFG });
+  const thG = (col,lbl) => `<th class="sortable" onclick="clickSort('lfg-grow','${col}',renderLFG)" style="white-space:nowrap">${lbl}${sortIcn('lfg-grow',col)}</th>`;
+  document.getElementById('lfg-grow-wrap').innerHTML = `<table>
+    <thead><tr>${thG('name','Account')}${thG('rep','Rep')}${thG('v24','LFG 2024')}${thG('v25','LFG 2025')}</tr></thead>
+    <tbody>${growData.map(d=>`<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
       <td class="mono">${fmtK(d.d2024.LFG)}</td>
-      <td class="mono" style="color:var(--good)">${fmtK(d.d2025.LFG)}</td></tr>`;
-  }).join('');
+      <td class="mono" style="color:var(--good)">${fmtK(d.d2025.LFG)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 // ─── WHITESPACE ──────────────────────────────────────────────────────────────
@@ -891,31 +950,40 @@ const WHITESPACE = [
   {name:'Grand Wailea Resort',seg:'Hospitality',opp:'Was $60k in 2023, collapsed to $9k — re-engagement.',pri:'med'},
 ];
 function renderWhitespace() {
-  document.getElementById('ws-body').innerHTML = WHITESPACE.map(w=>`
-    <tr><td style="font-weight:500">${w.name}</td><td>${pill(w.seg,'gray')}</td>
-      <td style="color:var(--muted);font-size:11px">${w.opp}</td>
-      <td>${w.pri==='high'?pill('High','red'):pill('Medium','amber')}</td></tr>`).join('');
+  if (!TABLE_SORT['dormant']) TABLE_SORT['dormant'] = { col: 'peak', dir: -1 };
 
-  // Dormant accounts: had $20k+ in 2022 or 2023, zero in 2024 and 2025
-  const dormant = ACCOUNTS.filter(a=>
+  // Whitespace static table (sortable by priority)
+  const wsSorted = TABLE_SORT['ws']?.col === 'pri'
+    ? [...WHITESPACE].sort((a,b) => TABLE_SORT['ws'].dir * (a.pri==='high'?-1:1) * (b.pri==='high'?-1:1) * -1)
+    : WHITESPACE;
+  const thW = (col,lbl) => `<th class="sortable" onclick="clickSort('ws','${col}',renderWhitespace)" style="white-space:nowrap">${lbl}${sortIcn('ws',col)}</th>`;
+  document.getElementById('ws-wrap').innerHTML = `<table>
+    <thead><tr><th>Brand / Account</th>${thW('seg','Segment')}<th>Opportunity</th>${thW('pri','Priority')}</tr></thead>
+    <tbody>${WHITESPACE.map(w=>`<tr><td style="font-weight:500">${w.name}</td><td>${pill(w.seg,'gray')}</td>
+      <td style="color:var(--muted);font-size:11px">${w.opp}</td>
+      <td>${w.pri==='high'?pill('High','red'):pill('Medium','amber')}</td></tr>`).join('')}</tbody></table>`;
+
+  // Dormant accounts — sortable
+  const dormantRaw = getAccounts().filter(a=>
     (a.y2022>=20000||a.y2023>=20000) && a.y2024===0 && a.y2025===0
   ).map(a=>{
     const peak = Math.max(a.y2019,a.y2020,a.y2021,a.y2022,a.y2023);
-    const peakY = [2019,2020,2021,2022,2023].find(y=>a[yKey(y)]===peak);
-    const lastY = [2023,2022,2021,2020,2019].find(y=>a[yKey(y)]>0);
+    const peakY = [2019,2020,2021,2022,2023].find(y=>a[yKey(y)]===peak)||'—';
+    const lastY = [2023,2022,2021,2020,2019].find(y=>a[yKey(y)]>0)||null;
     return {...a, peak, peakY, lastY};
-  }).sort((a,b)=>b.peak-a.peak).slice(0,20);
-
-  document.getElementById('dormant-body').innerHTML = dormant.map(d=>`
-    <tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.industry}</td>
+  });
+  const dormant = sortArr(dormantRaw, 'dormant', { name:d=>d.name, ind:d=>d.industry, peakY:d=>d.peakY||0, peak:d=>d.peak, lastY:d=>d.lastY||0 }).slice(0,30);
+  const thD = (col,lbl) => `<th class="sortable" onclick="clickSort('dormant','${col}',renderWhitespace)" style="white-space:nowrap">${lbl}${sortIcn('dormant',col)}</th>`;
+  document.getElementById('dormant-wrap').innerHTML = `<table>
+    <thead><tr>${thD('name','Account')}${thD('ind','Industry')}${thD('peakY','Peak Year')}${thD('peak','Peak Revenue')}${thD('lastY','Last Active')}</tr></thead>
+    <tbody>${dormant.map(d=>`<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.industry}</td>
       <td class="mono">${d.peakY}</td><td class="mono">${fmtK(d.peak)}</td>
-      <td class="mono">${d.lastY||'—'}</td></tr>`).join('');
+      <td class="mono">${d.lastY||'—'}</td></tr>`).join('')}</tbody></table>`;
 }
 
 // ─── REPS ─────────────────────────────────────────────────────────────────────
 let activeRepTab = 'overview';
 let repCharts = {};
-let repTableSort = { col: 'vb', dir: -1 };
 
 function switchRepTab(tab, el) {
   activeRepTab = tab;
@@ -943,10 +1011,13 @@ function renderReps() {
 }
 
 function renderRepTeamTable() {
+  const TID = 'reps-team';
+  if (!TABLE_SORT[TID]) TABLE_SORT[TID] = { col: 'vb', dir: -1 };
   const yr = parseInt(document.getElementById('rep-year-a').value) || yearB;
+  const filtAccts = getAccounts();
 
-  const repData = ACTIVE_REPS.map(r => {
-    const accts = ACCOUNTS.filter(a => a.rep === r);
+  let repData = ACTIVE_REPS.map(r => {
+    const accts = filtAccts.filter(a => a.rep === r);
     const va = accts.reduce((s,a) => s+(a[yKey(yearA)]||0), 0);
     const vb = accts.reduce((s,a) => s+(a[yKey(yr)]||0), 0);
     const active = accts.filter(a => (a[yKey(yr)]||0) > 0).length;
@@ -955,34 +1026,35 @@ function renderRepTeamTable() {
     const segRev = {};
     accts.forEach(a => { segRev[a.segment] = (segRev[a.segment]||0) + (a[yKey(yr)]||0); });
     const topSeg = Object.entries(segRev).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
-    return { rep:r, va, vb, active, atrLost, topSeg };
+    const chgPct = va > 0 ? (vb - va) / va : 0;
+    return { rep:r, va, vb, active, atrLost, topSeg, chgPct };
   });
 
-  repData.sort((a,b) => repTableSort.dir * ((repTableSort.dir>0?a:b)[repTableSort.col] - (repTableSort.dir>0?b:a)[repTableSort.col]));
+  repData = sortArr(repData, TID, { rep:r=>r.rep, va:r=>r.va, vb:r=>r.vb, chgPct:r=>r.chgPct, active:r=>r.active, topSeg:r=>r.topSeg, atrLost:r=>r.atrLost });
 
-  const si = col => `<span style="color:var(--dim);font-size:9px">${repTableSort.col===col?(repTableSort.dir<0?'▼':'▲'):'⇅'}</span>`;
+  const th = (col,lbl) => `<th class="sortable" onclick="sortRepTable('${col}')" style="white-space:nowrap">${lbl}${sortIcn(TID,col)}</th>`;
 
   document.getElementById('rep-overview-table-wrap').innerHTML = `
     <table>
       <thead><tr>
         <th style="width:24px">#</th>
-        <th>Rep</th>
-        <th class="sortable" onclick="sortRepTable('va')">Base ${yLabel(yearA)} ${si('va')}</th>
-        <th class="sortable" onclick="sortRepTable('vb')">Compare ${yLabel(yr)} ${si('vb')}</th>
-        <th>Change</th>
-        <th class="sortable" onclick="sortRepTable('active')">Active Accts ${si('active')}</th>
-        <th>Top Segment</th>
-        <th class="sortable" onclick="sortRepTable('atrLost')">Attrition Risk ${si('atrLost')}</th>
+        ${th('rep','Rep')}
+        ${th('va','Base '+yLabel(yearA))}
+        ${th('vb','Compare '+yLabel(yr))}
+        ${th('chgPct','Change')}
+        ${th('active','Active Accts')}
+        ${th('topSeg','Top Segment')}
+        ${th('atrLost','Attrition Risk')}
         <th></th>
       </tr></thead>
       <tbody>${repData.map((r,i) => {
-        const p = fmtPct(r.vb, r.va), col = chgColor(r.vb, r.va);
+        const col = chgColor(r.vb, r.va);
         return `<tr>
           <td class="mono" style="color:var(--dim)">${i+1}</td>
           <td style="font-weight:500;white-space:nowrap">${r.rep}</td>
           <td class="mono">${fmtK(r.va)}</td>
           <td class="mono" style="font-weight:600">${fmtK(r.vb)}</td>
-          <td class="mono" style="color:${col}">${p}</td>
+          <td class="mono" style="color:${col}">${fmtPct(r.vb,r.va)}</td>
           <td class="mono">${r.active}</td>
           <td>${r.topSeg!=='—'?pill(r.topSeg,'gray'):'—'}</td>
           <td class="mono" style="color:${r.atrLost>0?'var(--bad)':'var(--muted)'}">
@@ -994,11 +1066,7 @@ function renderRepTeamTable() {
     </table>`;
 }
 
-function sortRepTable(col) {
-  if(repTableSort.col === col) repTableSort.dir *= -1;
-  else { repTableSort.col = col; repTableSort.dir = -1; }
-  renderRepTeamTable();
-}
+function sortRepTable(col) { clickSort('reps-team', col, renderRepTeamTable); }
 
 function drillToRep(rep) {
   activeRepTab = 'detail';
@@ -1012,7 +1080,7 @@ function drillToRep(rep) {
 
 function renderRepDetail() {
   const rep = document.getElementById('rep-select').value || ACTIVE_REPS[0];
-  const repAccts = ACCOUNTS.filter(a => a.rep === rep);
+  const repAccts = getAccounts().filter(a => a.rep === rep);
   const va = repAccts.reduce((s,a) => s+(a[yKey(yearA)]||0), 0);
   const vb = repAccts.reduce((s,a) => s+(a[yKey(yearB)]||0), 0);
   const active = repAccts.filter(a => (a[yKey(yearB)]||0) > 0).length;
@@ -1129,7 +1197,9 @@ function renderRepDetail() {
 
 // ─── ACCOUNTS SEARCH ─────────────────────────────────────────────────────────
 function renderAccounts() {
-  // Populate filters on first load
+  const TID = 'accts';
+  if (!TABLE_SORT[TID]) TABLE_SORT[TID] = { col: yKey(yearB), dir: -1 };
+
   const repFilt = document.getElementById('acct-rep-filter');
   const segFilt = document.getElementById('acct-seg-filter');
   if(!repFilt.options.length) {
@@ -1145,41 +1215,40 @@ function renderAccounts() {
   const rep = repFilt.value;
   const seg = segFilt.value;
 
-  const filtered = ACCOUNTS.filter(a => {
-    const matchQ = q.length < 2 ||
-      a.name.toLowerCase().includes(q) ||
-      (a.industry||'').toLowerCase().includes(q) ||
-      (a.rep||'').toLowerCase().includes(q);
-    const matchRep = !rep || a.rep === rep;
-    const matchSeg = !seg || a.segment === seg;
-    return matchQ && matchRep && matchSeg;
+  const filtered = getAccounts().filter(a => {
+    const matchQ = q.length < 2 || a.name.toLowerCase().includes(q) || (a.industry||'').toLowerCase().includes(q) || (a.rep||'').toLowerCase().includes(q);
+    return matchQ && (!rep || a.rep === rep) && (!seg || a.segment === seg);
   });
 
-  const sorted = [...filtered].sort((a,b) => (b[yKey(yearB)]||0) - (a[yKey(yearB)]||0)).slice(0, 200);
-
-  // Summary bar
   const totalB = filtered.reduce((s,a) => s+(a[yKey(yearB)]||0), 0);
   const totalA = filtered.reduce((s,a) => s+(a[yKey(yearA)]||0), 0);
   const active2 = filtered.filter(a => (a[yKey(yearB)]||0) > 0).length;
   document.getElementById('acct-summary').innerHTML =
     `${filtered.length.toLocaleString()} accounts &nbsp;·&nbsp; <span style="color:var(--text)">${active2}</span> active in ${yLabel(yearB)} &nbsp;·&nbsp; Total: <span class="mono" style="color:var(--text)">${fmtK(totalA)}</span> → <span class="mono" style="font-weight:600;color:var(--text)">${fmtK(totalB)}</span> <span class="mono" style="color:${chgColor(totalB,totalA)}">${fmtPct(totalB,totalA)}</span>`;
 
+  const colMap = { name:a=>a.name, rep:a=>a.rep||'', ind:a=>a.industry||'' };
+  [2019,2020,2021,2022,2023,2024,2025].forEach(y => { colMap[yKey(y)] = a => a[yKey(y)]||0; });
+  const sorted = sortArr(filtered, TID, colMap).slice(0, 250);
+
+  const th = (col,lbl,extra='') => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderAccounts)" style="white-space:nowrap${extra}">${lbl}${sortIcn(TID,col)}</th>`;
+  const thead = `<tr><th>Account</th>${th('rep','Rep')}${th('ind','Industry')}${[2019,2020,2021,2022,2023,2024,2025].map(y=>th(yKey(y),String(y))).join('')}<th>Trend</th></tr>`;
+
   document.getElementById('acct-body').innerHTML = sorted.map(a => {
     const vals = [2019,2020,2021,2022,2023,2024,2025].map(y =>
       `<td class="mono" style="color:${a[yKey(y)]>0?'var(--text)':'var(--dim)'}">${a[yKey(y)]>0?fmtK(a[yKey(y)]):'—'}</td>`
     ).join('');
-    const yrs2 = [2019,2020,2021,2022,2023,2024,2025].map(y => a[yKey(y)]||0);
-    const mx = Math.max(...yrs2);
-    const trend = mx>0 ? (a.y2025>=a.y2024?'<span style="color:var(--good)">↑</span>':'<span style="color:var(--bad)">↓</span>') : '—';
+    const trend = a.y2025>0||a.y2024>0 ? (a.y2025>=a.y2024?'<span style="color:var(--good)">↑</span>':'<span style="color:var(--bad)">↓</span>') : '—';
     const repBadge = a.rep
-      ? `<span class="pill pill-blue" style="font-size:10px;padding:2px 6px;cursor:pointer;" onclick="filterByRep('${a.rep}')" title="Click to filter by ${a.rep}">${a.rep}</span>`
+      ? `<span class="pill pill-blue" style="font-size:10px;padding:2px 6px;cursor:pointer;" onclick="filterByRep('${a.rep}')" title="Filter by ${a.rep}">${a.rep}</span>`
       : '<span style="color:var(--dim);font-size:11px">—</span>';
-    return `<tr>
-      <td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+    return `<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
       <td style="white-space:nowrap">${repBadge}</td>
       <td style="color:var(--muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${a.industry}</td>
       ${vals}<td>${trend}</td></tr>`;
   }).join('');
+
+  // Update sortable column headers in static thead
+  document.querySelector('#pane-accounts thead tr').innerHTML = thead;
 }
 
 function filterByRep(rep) {
@@ -1306,6 +1375,7 @@ function handleFileUpload(input) {
 
       // Update the live ACCOUNTS array in-place (works with both const and let declarations)
       ACCOUNTS.splice(0, ACCOUNTS.length, ...parsed);
+      _divMap = null; // reset division map so it rebuilds from new data
 
       // Persist so the data survives page refreshes
       const ts = file.name.replace('.xlsx','');
