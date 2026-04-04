@@ -167,6 +167,30 @@
   .tab-btn.active { background: rgba(225,43,39,0.15); border-color: rgba(225,43,39,0.3); color: var(--red); }
   th.sortable { cursor: pointer; user-select: none; }
   th.sortable:hover { color: var(--text); }
+
+  /* MULTI-SELECT DROPDOWN */
+  .div-select-wrap { position: relative; display: inline-block; }
+  .div-select-btn { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--muted); font-size: 11px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: color 0.15s, border-color 0.15s; }
+  .div-select-btn:hover, .div-select-btn.open { color: var(--text); border-color: rgba(255,255,255,0.22); }
+  .div-select-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 4px); background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 6px 0; z-index: 200; min-width: 140px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .div-select-dropdown.open { display: block; }
+  .div-select-option { display: flex; align-items: center; gap: 7px; padding: 5px 12px; cursor: pointer; font-size: 12px; color: var(--muted); transition: background 0.1s; }
+  .div-select-option:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .div-select-option input[type=checkbox] { accent-color: var(--red); width: 13px; height: 13px; cursor: pointer; }
+
+  /* YEAR SELECT */
+  .year-select { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-size: 12px; padding: 5px 10px; font-family: 'DM Mono', monospace; cursor: pointer; font-weight: 500; }
+  .year-select:focus { outline: none; border-color: var(--red); }
+  .year-select.sel-a { border-color: rgba(225,43,39,0.5); color: var(--red); }
+  .year-select.sel-b { border-color: rgba(255,206,2,0.4); color: var(--yellow); }
+
+  /* PRIORITY BADGE */
+  .pri-select { background: transparent; border: 1px solid var(--border2); border-radius: 100px; color: var(--muted); font-size: 10px; padding: 2px 7px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; appearance: none; -webkit-appearance: none; }
+  .pri-select.pri-high { background: rgba(225,43,39,0.18); border-color: rgba(225,43,39,0.3); color: #f87171; }
+  .pri-select.pri-medium { background: rgba(251,191,36,0.12); border-color: rgba(251,191,36,0.25); color: var(--warn); }
+  .pri-select.pri-low { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.2); color: var(--good); }
+  .note-input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11px; font-family: 'DM Sans', sans-serif; width: 160px; padding: 2px 4px; outline: none; }
+  .note-input:focus { border-bottom-color: var(--red); color: var(--text); }
 </style>
 </head>
 <body>
@@ -214,24 +238,27 @@
 
 <div class="year-bar">
   <span class="year-bar-label">Base year</span>
-  <div class="year-pills" id="pills-a"></div>
-  <span class="year-bar-label" style="margin-left:8px;">Compare to</span>
-  <div class="year-pills" id="pills-b"></div>
-  <div class="year-legend" style="margin-left:12px;">
+  <select id="year-a-select" class="year-select sel-a" onchange="yearA=parseInt(this.value);refreshAll()"></select>
+  <span class="year-bar-label" style="margin-left:12px;">Compare to</span>
+  <select id="year-b-select" class="year-select sel-b" onchange="yearB=parseInt(this.value);refreshAll()"></select>
+  <div class="year-legend" style="margin-left:16px;">
     <div class="yl-item"><div class="yl-dot" style="background:var(--red);"></div><span id="leg-a">2024 (base)</span></div>
     <div class="yl-item"><div class="yl-dot" style="background:var(--yellow);opacity:0.7;"></div><span id="leg-b">2025 (compare)</span></div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
     <span class="year-bar-label">Division</span>
-    <select id="div-filter" onchange="activeDivFilter=this.value;_divMap=null;refreshAll()" style="font-size:11px;padding:4px 8px;">
-      <option value="">All Divisions</option>
-      <option value="CP">CP</option>
-      <option value="LFG">LFG</option>
-      <option value="AEC">AEC</option>
-      <option value="DP">DP</option>
-      <option value="HBMaui">HBMaui</option>
-      <option value="Dispatch">Dispatch</option>
-    </select>
+    <div class="div-select-wrap">
+      <button class="div-select-btn" id="div-select-btn" onclick="toggleDivDropdown(event)">All Divisions ▾</button>
+      <div class="div-select-dropdown" id="div-select-dropdown">
+        <label class="div-select-option"><input type="checkbox" value="__all__" id="div-chk-all" onchange="onDivAllChange(this)" checked> All Divisions</label>
+        <label class="div-select-option"><input type="checkbox" value="AEC" onchange="onDivChange()"> AEC</label>
+        <label class="div-select-option"><input type="checkbox" value="CP" onchange="onDivChange()"> Commercial Print</label>
+        <label class="div-select-option"><input type="checkbox" value="DP" onchange="onDivChange()"> Digital Print</label>
+        <label class="div-select-option"><input type="checkbox" value="HBMaui" onchange="onDivChange()"> HB Maui</label>
+        <label class="div-select-option"><input type="checkbox" value="Dispatch" onchange="onDivChange()"> Dispatch</label>
+        <label class="div-select-option"><input type="checkbox" value="Large Format" onchange="onDivChange()"> Large Format</label>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -257,22 +284,18 @@
       </button>
     </div>
     <div class="nav-section">
-      <div class="nav-section-label">Actions</div>
+      <div class="nav-section-label">Insights</div>
       <button class="nav-item" onclick="nav('attrition',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 3v5l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M11 1l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         Attrition Watch
       </button>
-      <button class="nav-item" onclick="nav('expansion',this)">
+      <button class="nav-item" onclick="nav('deepen',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        Expansion
+        Deepen the Relationship
       </button>
-      <button class="nav-item" onclick="nav('lfg',this)">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2c0 3-4 4-4 7a4 4 0 008 0c0-3-4-4-4-7z" stroke="currentColor" stroke-width="1.2"/></svg>
-        LFG Lumpiness
-      </button>
-      <button class="nav-item" onclick="nav('whitespace',this)">
+      <button class="nav-item" onclick="nav('prospects',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        Whitespace
+        Potential Prospects
       </button>
     </div>
     <div class="nav-section">
@@ -323,7 +346,7 @@
 
     <!-- DIVISIONS -->
     <div id="pane-divisions" class="pane">
-      <div class="notice">Division-level data (AEC, CP, DP, LFG) is available for 2024–2025 only. Historical totals use account-level data.</div>
+      <div class="notice">Division-level data (AEC, CP, DP, Large Format, etc.) is available for 2024–2025. Historical totals use account-level data.</div>
       <div class="panel">
         <div class="panel-header"><div class="panel-title">Division revenue 2024 vs 2025</div></div>
         <div class="panel-body" id="div-bars"></div>
@@ -334,7 +357,7 @@
           <div class="panel-body" id="div-chars"></div>
         </div>
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Top LFG accounts 2025</div></div>
+          <div class="panel-header"><div class="panel-title">Top accounts by division revenue</div></div>
           <div id="lfg-top-wrap" class="panel-body tbl-wrap"></div>
         </div>
       </div>
@@ -354,6 +377,10 @@
         <div class="panel-header"><div class="panel-title">Active account count by year</div></div>
         <div class="panel-body"><div class="chart-wrap" style="height:200px"><canvas id="acct-trend-chart"></canvas></div></div>
       </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Division revenue trends</div><div class="panel-sub">2024 vs 2025 by division</div></div>
+        <div class="panel-body"><div class="chart-wrap" style="height:260px"><canvas id="div-trend-chart"></canvas></div></div>
+      </div>
     </div>
 
     <!-- ATTRITION -->
@@ -361,23 +388,20 @@
       <div class="metric-row" id="atr-metrics"></div>
       <div class="panel">
         <div class="panel-header">
-          <div><div class="panel-title">Attrition watch</div><div class="panel-sub">Accounts with base-year spend ≥$5k that dropped &gt;50% in compare year</div></div>
+          <div><div class="panel-title">Attrition watch</div><div class="panel-sub">Accounts with base-year spend ≥ threshold that dropped &gt;50% in compare year</div></div>
           <select id="atr-min" onchange="renderAttrition()">
             <option value="5000">Min $5k</option><option value="10000" selected>Min $10k</option>
             <option value="25000">Min $25k</option><option value="50000">Min $50k</option>
           </select>
         </div>
-        <div class="panel-body tbl-wrap">
-          <table><thead><tr><th>Account</th><th>Rep</th><th>Segment</th><th id="atr-h-a">Base</th><th id="atr-h-b">Compare</th><th>Revenue lost</th><th>Status</th></tr></thead>
-          <tbody id="atr-body"></tbody></table>
-        </div>
+        <div id="atr-wrap" class="panel-body tbl-wrap"></div>
       </div>
     </div>
 
-    <!-- EXPANSION -->
-    <div id="pane-expansion" class="pane">
+    <!-- DEEPEN THE RELATIONSHIP -->
+    <div id="pane-deepen" class="pane">
       <div class="panel">
-        <div class="panel-header"><div><div class="panel-title">Growth accounts</div><div class="panel-sub">Active accounts with &gt;20% growth and compare-year spend ≥$30k</div></div></div>
+        <div class="panel-header"><div><div class="panel-title">Growth accounts — Deepen the Relationship</div><div class="panel-sub">Active accounts with &gt;20% growth and compare-year spend ≥$30k</div></div></div>
         <div id="exp-wrap" class="panel-body tbl-wrap"></div>
       </div>
       <div class="panel">
@@ -386,29 +410,16 @@
       </div>
     </div>
 
-    <!-- LFG -->
-    <div id="pane-lfg" class="pane">
-      <div class="notice">LFG division data available 2024–2025 only. Post-project fall-off pattern: large LFG spike for remodel/rebuild, then drops.</div>
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">Post-project fall-off (2024→2025)</div></div>
-          <div id="lfg-drop-wrap" class="panel-body tbl-wrap"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">Active LFG projects (growing 2025)</div></div>
-          <div id="lfg-grow-wrap" class="panel-body tbl-wrap"></div>
-        </div>
-      </div>
-    </div>
+    <!-- LFG REMOVED -->
 
-    <!-- WHITESPACE -->
-    <div id="pane-whitespace" class="pane">
+    <!-- PROSPECTS -->
+    <div id="pane-prospects" class="pane">
       <div class="panel">
-        <div class="panel-header"><div><div class="panel-title">Whitespace — zero or near-zero revenue accounts</div><div class="panel-sub">Major Hawaii brands matching HONBLUE ICPs with no active relationship</div></div></div>
+        <div class="panel-header"><div><div class="panel-title">Potential Prospects — new relationships &amp; underserved accounts</div><div class="panel-sub">Prospects with no or minimal relationship (&lt;$10k) estimated at $25k+ annual value</div></div></div>
         <div id="ws-wrap" class="panel-body tbl-wrap"></div>
       </div>
       <div class="panel">
-        <div class="panel-header"><div><div class="panel-title">Dormant accounts</div><div class="panel-sub">Had significant revenue 2+ years ago, now zero — reactivation targets</div></div></div>
+        <div class="panel-header"><div><div class="panel-title">Underserved existing accounts</div><div class="panel-sub">Active accounts spending &lt;$10k — gap to close vs. segment peers</div></div></div>
         <div id="dormant-wrap" class="panel-body tbl-wrap"></div>
       </div>
     </div>
@@ -479,7 +490,7 @@
 <script>
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let yearA = 2024, yearB = 2025;
-let activeDivFilter = '';
+let activeDivFilters = new Set(); // empty = all
 const TABLE_SORT = {};
 const YEARS = [2019,2020,2021,2022,2023,2024,2025,2026];
 const YEAR_LABELS = {2026: '2026*'};
@@ -490,13 +501,40 @@ const ACTIVE_REPS = ['Stan Calma','Stacy Duldulao','Matt Heim','Rhoda Calma','So
   'Darren Straka','Jasmine Christian','Dave Miklos','Tracey Johnson',
   'Arnelle Stephens','Connor Ruppel','Jaison VanDenover','Travis Gaspar'];
 
-const SEGS = ['AEC','Hospitality','Retail','Real Estate','Food & Beverage','Financial Services',
-  'Government','Nonprofit','Healthcare','Education','Other'];
+const SEGS = [
+  'Architecture, Engineering & Construction (AEC)',
+  'Education, Nonprofit & Civic',
+  'Retail & Consumer',
+  'Media, Marketing & Creative',
+  'Real Estate & Property',
+  'Hospitality & Tourism',
+  'Food & Beverage',
+  'Manufacturing, Logistics & Industrial',
+  'Professional Services & Technology',
+  'Healthcare & Life Sciences',
+  'Print & Reprographics',
+  'Government & Military',
+  'Financial Services',
+  'Other',
+  'Internal'
+];
 
 const SEG_COLORS = {
-  'AEC':'#4ade80','Hospitality':'#60a5fa','Retail':'#f59e0b','Real Estate':'#c084fc',
-  'Food & Beverage':'#fb923c','Financial Services':'#38bdf8','Government':'#94a3b8',
-  'Nonprofit':'#a78bfa','Healthcare':'#34d399','Education':'#f472b6','Other':'#6b7280'
+  'Architecture, Engineering & Construction (AEC)': '#4ade80',
+  'Education, Nonprofit & Civic': '#a78bfa',
+  'Retail & Consumer': '#f59e0b',
+  'Media, Marketing & Creative': '#60a5fa',
+  'Real Estate & Property': '#c084fc',
+  'Hospitality & Tourism': '#34d399',
+  'Food & Beverage': '#fb923c',
+  'Manufacturing, Logistics & Industrial': '#94a3b8',
+  'Professional Services & Technology': '#38bdf8',
+  'Healthcare & Life Sciences': '#f472b6',
+  'Print & Reprographics': '#fbbf24',
+  'Government & Military': '#6b7280',
+  'Financial Services': '#818cf8',
+  'Other': '#475569',
+  'Internal': '#334155'
 };
 
 function fmtK(v) {
@@ -531,9 +569,9 @@ function getDivMap() {
 }
 
 function getAccounts() {
-  if (!activeDivFilter) return ACCOUNTS;
+  if (!activeDivFilters || activeDivFilters.size === 0) return ACCOUNTS;
   const map = getDivMap();
-  return ACCOUNTS.filter(a => (map[a.name] || 'Other') === activeDivFilter);
+  return ACCOUNTS.filter(a => activeDivFilters.has(map[a.name] || 'Other'));
 }
 
 function clickSort(id, col, fn) {
@@ -560,38 +598,64 @@ function sortArr(arr, id, colMap) {
   });
 }
 
-// ─── YEAR PILLS ─────────────────────────────────────────────────────────────
-function initYearPills() {
-  const pa = document.getElementById('pills-a');
-  const pb = document.getElementById('pills-b');
+// ─── YEAR SELECTS ────────────────────────────────────────────────────────────
+function initYearSelects() {
+  const sa = document.getElementById('year-a-select');
+  const sb = document.getElementById('year-b-select');
   YEARS.forEach(y => {
-    const ba = document.createElement('button');
-    ba.className = 'year-pill' + (y===yearA?' selected-a':'');
-    ba.textContent = yLabel(y);
-    ba.dataset.year = y;
-    ba.onclick = () => { yearA=y; refreshAll(); };
-    pa.appendChild(ba);
-
-    const bb = document.createElement('button');
-    bb.className = 'year-pill' + (y===yearB?' selected-b':'');
-    bb.textContent = yLabel(y);
-    bb.dataset.year = y;
-    bb.onclick = () => { yearB=y; refreshAll(); };
-    pb.appendChild(bb);
+    const oa = document.createElement('option');
+    oa.value = y; oa.textContent = yLabel(y); if(y===yearA) oa.selected=true;
+    sa.appendChild(oa);
+    const ob = document.createElement('option');
+    ob.value = y; ob.textContent = yLabel(y); if(y===yearB) ob.selected=true;
+    sb.appendChild(ob);
   });
 }
 
-function updateYearPills() {
-  document.querySelectorAll('#pills-a .year-pill').forEach(b=>{
-    b.className = 'year-pill' + (parseInt(b.dataset.year)===yearA?' selected-a':'');
-  });
-  document.querySelectorAll('#pills-b .year-pill').forEach(b=>{
-    b.className = 'year-pill' + (parseInt(b.dataset.year)===yearB?' selected-b':'');
-  });
+function updateYearSelects() {
+  const sa = document.getElementById('year-a-select');
+  const sb = document.getElementById('year-b-select');
+  if(sa) sa.value = yearA;
+  if(sb) sb.value = yearB;
   document.getElementById('h-year-a').textContent = yLabel(yearA);
   document.getElementById('h-year-b').textContent = yLabel(yearB);
   document.getElementById('leg-a').textContent = yLabel(yearA)+' (base)';
   document.getElementById('leg-b').textContent = yLabel(yearB)+' (compare)';
+}
+
+// ─── DIVISION MULTI-SELECT ───────────────────────────────────────────────────
+function toggleDivDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('div-select-dropdown');
+  const btn = document.getElementById('div-select-btn');
+  const open = dd.classList.toggle('open');
+  btn.classList.toggle('open', open);
+}
+document.addEventListener('click', () => {
+  document.getElementById('div-select-dropdown')?.classList.remove('open');
+  document.getElementById('div-select-btn')?.classList.remove('open');
+});
+function onDivAllChange(cb) {
+  const dd = document.getElementById('div-select-dropdown');
+  dd.querySelectorAll('input[type=checkbox]:not(#div-chk-all)').forEach(c => c.checked = false);
+  activeDivFilters = new Set();
+  updateDivBtn();
+  _divMap = null; refreshAll();
+}
+function onDivChange() {
+  const all = document.getElementById('div-chk-all');
+  const checked = Array.from(document.querySelectorAll('#div-select-dropdown input[type=checkbox]:not(#div-chk-all):checked'));
+  activeDivFilters = new Set(checked.map(c => c.value));
+  all.checked = activeDivFilters.size === 0;
+  updateDivBtn();
+  _divMap = null; refreshAll();
+}
+function updateDivBtn() {
+  const btn = document.getElementById('div-select-btn');
+  if(!btn) return;
+  if(activeDivFilters.size === 0) { btn.textContent = 'All Divisions ▾'; return; }
+  const labels = {AEC:'AEC', CP:'CP', DP:'DP', HBMaui:'HB Maui', Dispatch:'Dispatch', 'Large Format':'LF'};
+  btn.textContent = [...activeDivFilters].map(d=>labels[d]||d).join(', ') + ' ▾';
 }
 
 // ─── NAV ─────────────────────────────────────────────────────────────────────
@@ -606,8 +670,8 @@ function nav(id, el) {
 function renderPane(id) {
   const fns = {
     overview: renderOverview, segments: renderSegments, divisions: renderDivisions,
-    trends: renderTrends, attrition: renderAttrition, expansion: renderExpansion,
-    lfg: renderLFG, whitespace: renderWhitespace, reps: renderReps, accounts: renderAccounts
+    trends: renderTrends, attrition: renderAttrition, deepen: renderDeepen,
+    prospects: renderProspects, reps: renderReps, accounts: renderAccounts
   };
   if(fns[id]) fns[id]();
 }
@@ -615,7 +679,7 @@ function renderPane(id) {
 let currentPane = 'overview';
 
 function refreshAll() {
-  updateYearPills();
+  updateYearSelects();
   const active = document.querySelector('.pane.active');
   if(active) renderPane(active.id.replace('pane-',''));
 }
@@ -738,12 +802,12 @@ function renderSegTop() {
 
 // ─── DIVISIONS ───────────────────────────────────────────────────────────────
 function renderDivisions() {
-  const DIV_ORDER = ['CP','LFG','AEC','DP','HBMaui','Dispatch','Other'];
-  const DIV_COLORS = {CP:'#60a5fa',LFG:'#fbbf24',AEC:'#4ade80',DP:'#c084fc',HBMaui:'#34d399',Dispatch:'#94a3b8',Other:'#6b7280'};
+  const DIV_ORDER = ['CP','AEC','DP','HBMaui','Dispatch','Large Format','Other'];
+  const DIV_COLORS = {CP:'#60a5fa',AEC:'#4ade80',DP:'#c084fc',HBMaui:'#34d399',Dispatch:'#94a3b8','Large Format':'#fbbf24',Other:'#6b7280'};
   const div24={}, div25={};
   DIV_ORDER.forEach(d=>{div24[d]=0;div25[d]=0;});
   DIVISIONS.forEach(d=>{
-    DIV_ORDER.forEach(k=>{ div24[k]+=(d.d2024[k]||0); div25[k]+=(d.d2025[k]||0); });
+    DIV_ORDER.forEach(k=>{ div24[k]+=(d.d2024?d.d2024[k]||0:0); div25[k]+=(d.d2025?d.d2025[k]||0:0); });
   });
   const maxDiv = Math.max(...DIV_ORDER.map(d=>Math.max(div24[d],div25[d])));
   document.getElementById('div-bars').innerHTML = DIV_ORDER.map(d=>{
@@ -764,26 +828,34 @@ function renderDivisions() {
 
   document.getElementById('div-chars').innerHTML = [
     {d:'CP',c:'#60a5fa',note:'Steady, recurring. Highest-volume division. Anchors base revenue but declining.'},
-    {d:'DP',c:'#c084fc',note:'Growing (+8.5%). Short-run, variable data, campaign-driven. Consistent repeats.'},
-    {d:'LFG',c:'#fbbf24',note:'Project-driven, lumpy. Remodel/rebuild spikes then falls. Needs pipeline visibility.'},
-    {d:'AEC',c:'#4ade80',note:'Project-driven (−14.3%). Tied to active construction activity; ebbs with project cadence.'},
-    {d:'HBMaui',c:'#34d399',note:'Stable (+3.5%). Maui market holding with consistent client base.'},
-    {d:'Dispatch',c:'#94a3b8',note:'Quietly growing (+11.9%) as delivery frequency increases.'},
+    {d:'DP',c:'#c084fc',note:'Growing. Short-run, variable data, campaign-driven. Consistent repeats.'},
+    {d:'AEC',c:'#4ade80',note:'Project-driven. Tied to active construction activity; ebbs with project cadence.'},
+    {d:'HBMaui',c:'#34d399',note:'Stable. Maui market holding with consistent client base.'},
+    {d:'Dispatch',c:'#94a3b8',note:'Growing as delivery frequency increases across accounts.'},
+    {d:'Large Format',c:'#fbbf24',note:'Signage, banners, wide-format prints. Growing with real estate and retail.'},
   ].map(x=>`<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
-    <div style="width:28px;height:28px;background:${x.c}22;border:1px solid ${x.c}44;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:${x.c};flex-shrink:0;">${x.d}</div>
+    <div style="width:32px;height:28px;background:${x.c}22;border:1px solid ${x.c}44;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${x.c};flex-shrink:0;text-align:center;padding:2px;">${x.d}</div>
     <div><div style="font-size:12px;font-weight:500;margin-bottom:2px;">${x.d}</div><div style="font-size:11px;color:var(--muted);line-height:1.5;">${x.note}</div></div>
   </div>`).join('');
 
-  if (!TABLE_SORT['lfg-top']) TABLE_SORT['lfg-top'] = { col: 'v25', dir: -1 };
-  const lfgTopRaw = [...DIVISIONS].filter(d=>d.d2025.LFG>5000);
-  const lfgTop = sortArr(lfgTopRaw, 'lfg-top', { name:d=>d.name, v24:d=>d.d2024.LFG, v25:d=>d.d2025.LFG, chg:d=>d.d2025.LFG-d.d2024.LFG }).slice(0,15);
-  const thLT = (col,lbl) => `<th class="sortable" onclick="clickSort('lfg-top','${col}',renderDivisions)" style="white-space:nowrap">${lbl}${sortIcn('lfg-top',col)}</th>`;
+  // Top accounts by total division revenue in compare year
+  if (!TABLE_SORT['div-top']) TABLE_SORT['div-top'] = { col: 'v25', dir: -1 };
+  const divTopRaw = [...DIVISIONS].filter(d=>{
+    const tot = Object.values(d.d2025||{}).reduce((s,v)=>s+(v||0),0);
+    return tot > 5000;
+  }).map(d=>{
+    const v24 = Object.values(d.d2024||{}).reduce((s,v)=>s+(v||0),0);
+    const v25 = Object.values(d.d2025||{}).reduce((s,v)=>s+(v||0),0);
+    const topDiv = Object.entries(d.d2025||{}).filter(([k])=>k!=='Other').sort((a,b)=>b[1]-a[1])[0]?.[0]||'Other';
+    return {...d, v24, v25, topDiv};
+  });
+  const divTop = sortArr(divTopRaw, 'div-top', { name:d=>d.name, v24:d=>d.v24, v25:d=>d.v25, chg:d=>d.v25-d.v24 }).slice(0,15);
+  const thDT = (col,lbl) => `<th class="sortable" onclick="clickSort('div-top','${col}',renderDivisions)" style="white-space:nowrap">${lbl}${sortIcn('div-top',col)}</th>`;
   document.getElementById('lfg-top-wrap').innerHTML = `<table>
-    <thead><tr>${thLT('name','Account')}${thLT('v24','LFG 2024')}${thLT('v25','LFG 2025')}${thLT('chg','Change')}<th>Signal</th></tr></thead>
-    <tbody>${lfgTop.map(d=>{
-      const diff=d.d2025.LFG-d.d2024.LFG;
-      const sig=diff>5000?pill('Growing','green'):diff<-5000?pill('Post-project','amber'):pill('Stable','gray');
-      return `<tr><td style="font-weight:500">${d.name}</td><td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono">${fmtK(d.d2025.LFG)}</td><td class="mono" style="color:${chgColor(d.d2025.LFG,d.d2024.LFG)}">${diff>0?'+':''}${fmtK(Math.abs(diff))}</td><td>${sig}</td></tr>`;
+    <thead><tr>${thDT('name','Account')}${thDT('v24','2024')}${thDT('v25','2025')}${thDT('chg','Change')}<th>Primary Div</th></tr></thead>
+    <tbody>${divTop.map(d=>{
+      const diff=d.v25-d.v24;
+      return `<tr><td style="font-weight:500">${d.name}</td><td class="mono">${fmtK(d.v24)}</td><td class="mono">${fmtK(d.v25)}</td><td class="mono" style="color:${chgColor(d.v25,d.v24)}">${diff>0?'+':''}${fmtK(Math.abs(diff))}</td><td>${pill(d.topDiv,'gray')}</td></tr>`;
     }).join('')}</tbody></table>`;
 }
 
@@ -834,6 +906,47 @@ function renderTrends() {
       scales:{ x:{grid:{display:false},ticks:{color:'#ffffff88'}},
         y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#ffffff88'}} }}
   });
+
+  // Division trends chart (2024 vs 2025)
+  const DIV_ORDER_T = ['CP','AEC','DP','HBMaui','Dispatch','Large Format'];
+  const DIV_COLORS_T = {CP:'#60a5fa',AEC:'#4ade80',DP:'#c084fc',HBMaui:'#34d399',Dispatch:'#94a3b8','Large Format':'#fbbf24'};
+  const divTotals24 = {}, divTotals25 = {};
+  DIV_ORDER_T.forEach(d=>{divTotals24[d]=0;divTotals25[d]=0;});
+  (typeof DIVISIONS !== 'undefined' ? DIVISIONS : []).forEach(d=>{
+    DIV_ORDER_T.forEach(k=>{
+      divTotals24[k]+=(d.d2024?d.d2024[k]||0:0);
+      divTotals25[k]+=(d.d2025?d.d2025[k]||0:0);
+    });
+  });
+  if(trendCharts.div) trendCharts.div.destroy();
+  const divTrendCanvas = document.getElementById('div-trend-chart');
+  if(divTrendCanvas) {
+    trendCharts.div = new Chart(divTrendCanvas, {
+      type: 'bar',
+      data: {
+        labels: DIV_ORDER_T,
+        datasets: [
+          { label: '2024', data: DIV_ORDER_T.map(d=>divTotals24[d]),
+            backgroundColor: DIV_ORDER_T.map(d=>(DIV_COLORS_T[d]||'#888')+'66'),
+            borderColor: DIV_ORDER_T.map(d=>DIV_COLORS_T[d]||'#888'),
+            borderWidth: 1, borderRadius: 4, borderSkipped: false },
+          { label: '2025', data: DIV_ORDER_T.map(d=>divTotals25[d]),
+            backgroundColor: DIV_ORDER_T.map(d=>DIV_COLORS_T[d]||'#888'),
+            borderRadius: 4, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index' },
+        plugins: { legend: { labels: { color: '#ffffff88', boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => '  ' + c.dataset.label + ': ' + fmtK(c.parsed.y) } } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#ffffff88' } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#ffffff88', callback: v => fmtK(v) } }
+        }
+      }
+    });
+  }
 }
 
 // ─── ATTRITION ───────────────────────────────────────────────────────────────
@@ -866,119 +979,194 @@ function renderAttrition() {
 
   const th = (col,lbl) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderAttrition)" style="white-space:nowrap">${lbl}${sortIcn(TID,col)}</th>`;
   document.getElementById('atr-wrap').innerHTML = `<table>
-    <thead><tr>${th('name','Account')}${th('rep','Rep')}${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('lost','Lost')}${th('pct','Drop %')}<th>Status</th></tr></thead>
+    <thead><tr>${th('name','Account')}${th('rep','Rep')}${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('lost','Lost')}${th('pct','Drop %')}<th>Status</th><th>Priority</th><th>Notes</th></tr></thead>
     <tbody>${atr.map(a=>{
       const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0, lostAmt=va-vb;
       const pct = Math.round((1-vb/va)*100);
       const status = vb===0?pill('Churned','red'):pct>=80?pill('Critical','amber'):pill('Warning','gray');
-      return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
-        <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
+      const priKey = 'hb_pri_atr_'+a.name, noteKey = 'hb_note_atr_'+a.name;
+      const priVal = localStorage.getItem(priKey)||'medium';
+      const noteVal = (localStorage.getItem(noteKey)||'').replace(/"/g,'&quot;');
+      return `<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+        <td>${pill(a.segment||'—','gray')}</td><td class="mono">${fmtK(va)}</td>
         <td class="mono">${fmtK(vb)}</td>
-        <td class="mono" style="color:var(--bad)">−${fmtK(lostAmt)}</td><td>${status}</td></tr>`;
+        <td class="mono" style="color:var(--bad)">−${fmtK(lostAmt)}</td><td>${status}</td>
+        <td><select class="pri-select pri-${priVal}" onchange="savePri('${priKey}',this)">
+          <option value="high" ${priVal==='high'?'selected':''}>High</option>
+          <option value="medium" ${priVal==='medium'?'selected':''}>Medium</option>
+          <option value="low" ${priVal==='low'?'selected':''}>Low</option>
+        </select></td>
+        <td><input class="note-input" value="${noteVal}" placeholder="Add note…" onchange="saveNote('${noteKey}',this)" onblur="saveNote('${noteKey}',this)"></td>
+      </tr>`;
     }).join('')}</tbody></table>`;
 }
 
-// ─── EXPANSION ───────────────────────────────────────────────────────────────
-function renderExpansion() {
+// ─── DEEPEN THE RELATIONSHIP ───────────────────────────────────────────────────
+function renderDeepen() {
   const accts = getAccounts();
   const makeTable = (TID, data, fn) => {
     if (!TABLE_SORT[TID]) TABLE_SORT[TID] = { col: 'vb', dir: -1 };
     const rows = sortArr(data, TID, { name:a=>a.name, rep:a=>a.rep||'', seg:a=>a.segment, va:a=>a[yKey(yearA)]||0, vb:a=>a[yKey(yearB)]||0, chg:a=>(a[yKey(yearA)]>0?(a[yKey(yearB)]-a[yKey(yearA)])/a[yKey(yearA)]:0) });
-    const th = (col,lbl) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderExpansion)" style="white-space:nowrap">${lbl}${sortIcn(TID,col)}</th>`;
-    return `<table><thead><tr><th>Account</th>${th('rep','Rep')}${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('chg','Chg')}</tr></thead>
+    const th = (col,lbl) => `<th class="sortable" onclick="clickSort('${TID}','${col}',renderDeepen)" style="white-space:nowrap">${lbl}${sortIcn(TID,col)}</th>`;
+    return `<table><thead><tr><th>Account</th>${th('rep','Rep')}${th('seg','Segment')}${th('va',yLabel(yearA))}${th('vb',yLabel(yearB))}${th('chg','Chg')}<th>Priority</th><th>Notes</th></tr></thead>
       <tbody>${rows.map(fn).join('')}</tbody></table>`;
   };
 
   const grow = accts.filter(a=>a[yKey(yearB)]>=30000 && a[yKey(yearA)]>0 && a[yKey(yearB)]>a[yKey(yearA)]*1.2).slice(0,100);
   document.getElementById('exp-wrap').innerHTML = makeTable('exp', grow, a=>{
     const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0;
-    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
-      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
-      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--good)">${fmtPct(vb,va)}</td></tr>`;
+    const priKey='hb_pri_exp_'+a.name, noteKey='hb_note_exp_'+a.name;
+    const priVal=localStorage.getItem(priKey)||'medium';
+    const noteVal=(localStorage.getItem(noteKey)||'').replace(/"/g,'&quot;');
+    return `<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+      <td>${pill(a.segment||'—','gray')}</td><td class="mono">${fmtK(va)}</td>
+      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--good)">${fmtPct(vb,va)}</td>
+      <td><select class="pri-select pri-${priVal}" onchange="savePri('${priKey}',this)">
+        <option value="high" ${priVal==='high'?'selected':''}>High</option>
+        <option value="medium" ${priVal==='medium'?'selected':''}>Medium</option>
+        <option value="low" ${priVal==='low'?'selected':''}>Low</option>
+      </select></td>
+      <td><input class="note-input" value="${noteVal}" placeholder="Add note…" onchange="saveNote('${noteKey}',this)" onblur="saveNote('${noteKey}',this)"></td>
+    </tr>`;
   });
 
   const mod = accts.filter(a=>a[yKey(yearA)]>=20000 && a[yKey(yearB)]>=20000
     && a[yKey(yearB)] < a[yKey(yearA)]*0.75 && a[yKey(yearB)] >= a[yKey(yearA)]*0.5).slice(0,100);
   document.getElementById('mod-wrap').innerHTML = makeTable('mod', mod, a=>{
     const va=a[yKey(yearA)]||0, vb=a[yKey(yearB)]||0;
-    return `<tr><td style="font-weight:500">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
-      <td>${pill(a.segment,'gray')}</td><td class="mono">${fmtK(va)}</td>
-      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--warn)">${fmtPct(vb,va)}</td></tr>`;
+    const priKey='hb_pri_mod_'+a.name, noteKey='hb_note_mod_'+a.name;
+    const priVal=localStorage.getItem(priKey)||'medium';
+    const noteVal=(localStorage.getItem(noteKey)||'').replace(/"/g,'&quot;');
+    return `<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td><td style="color:var(--muted)">${a.rep||'—'}</td>
+      <td>${pill(a.segment||'—','gray')}</td><td class="mono">${fmtK(va)}</td>
+      <td class="mono">${fmtK(vb)}</td><td class="mono" style="color:var(--warn)">${fmtPct(vb,va)}</td>
+      <td><select class="pri-select pri-${priVal}" onchange="savePri('${priKey}',this)">
+        <option value="high" ${priVal==='high'?'selected':''}>High</option>
+        <option value="medium" ${priVal==='medium'?'selected':''}>Medium</option>
+        <option value="low" ${priVal==='low'?'selected':''}>Low</option>
+      </select></td>
+      <td><input class="note-input" value="${noteVal}" placeholder="Add note…" onchange="saveNote('${noteKey}',this)" onblur="saveNote('${noteKey}',this)"></td>
+    </tr>`;
   });
 }
 
-// ─── LFG ─────────────────────────────────────────────────────────────────────
-function renderLFG() {
-  if (!TABLE_SORT['lfg-drop']) TABLE_SORT['lfg-drop'] = { col: 'drop', dir: -1 };
-  if (!TABLE_SORT['lfg-grow']) TABLE_SORT['lfg-grow'] = { col: 'v25', dir: -1 };
 
-  const dropData = sortArr([...DIVISIONS].filter(d=>d.d2024.LFG>=10000 && d.d2025.LFG < d.d2024.LFG*0.5),
-    'lfg-drop', { name:d=>d.name, rep:d=>d.rep||'', v24:d=>d.d2024.LFG, v25:d=>d.d2025.LFG, drop:d=>d.d2024.LFG-d.d2025.LFG });
-  const thD = (col,lbl) => `<th class="sortable" onclick="clickSort('lfg-drop','${col}',renderLFG)" style="white-space:nowrap">${lbl}${sortIcn('lfg-drop',col)}</th>`;
-  document.getElementById('lfg-drop-wrap').innerHTML = `<table>
-    <thead><tr>${thD('name','Account')}${thD('rep','Rep')}${thD('v24','LFG 2024')}${thD('v25','LFG 2025')}${thD('drop','Drop')}</tr></thead>
-    <tbody>${dropData.map(d=>{
-      const diff=d.d2024.LFG-d.d2025.LFG;
-      return `<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
-        <td class="mono">${fmtK(d.d2024.LFG)}</td><td class="mono" style="color:var(--bad)">${fmtK(d.d2025.LFG)}</td>
-        <td class="mono" style="color:var(--bad)">−${fmtK(diff)}</td></tr>`;
-    }).join('')}</tbody></table>`;
 
-  const growData = sortArr([...DIVISIONS].filter(d=>d.d2025.LFG>=10000 && d.d2025.LFG > d.d2024.LFG*1.5),
-    'lfg-grow', { name:d=>d.name, rep:d=>d.rep||'', v24:d=>d.d2024.LFG, v25:d=>d.d2025.LFG });
-  const thG = (col,lbl) => `<th class="sortable" onclick="clickSort('lfg-grow','${col}',renderLFG)" style="white-space:nowrap">${lbl}${sortIcn('lfg-grow',col)}</th>`;
-  document.getElementById('lfg-grow-wrap').innerHTML = `<table>
-    <thead><tr>${thG('name','Account')}${thG('rep','Rep')}${thG('v24','LFG 2024')}${thG('v25','LFG 2025')}</tr></thead>
-    <tbody>${growData.map(d=>`<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.rep||'—'}</td>
-      <td class="mono">${fmtK(d.d2024.LFG)}</td>
-      <td class="mono" style="color:var(--good)">${fmtK(d.d2025.LFG)}</td></tr>`).join('')}</tbody></table>`;
+// ─── POTENTIAL PROSPECTS ──────────────────────────────────────────────────────
+// printEst = estimated annual print spend if fully engaged
+const PROSPECTS_STATIC = [
+  {name:'Sheraton Waikiki / Le Meridien / W Hotels',seg:'Hospitality & Tourism',opp:'Largest hotel footprint in Waikiki — zero on record. Menu, signage, collateral.',printEst:70000,pri:'high',type:'new'},
+  {name:'Hawaii Tourism Authority',seg:'Government & Military',opp:'Was $283k in 2022. Fully dark since. Marketing campaigns, visitor guides.',printEst:65000,pri:'high',type:'reactivation'},
+  {name:'First Hawaiian Bank',seg:'Financial Services',opp:'Only $3.6k on record vs Bank of Hawaii at $113k. 50+ branches — branch marketing, forms.',printEst:45000,pri:'high',type:'underserved'},
+  {name:'Queens Medical Center',seg:'Healthcare & Life Sciences',opp:'Largest private hospital in Hawaii. Zero record. Patient forms, wayfinding, marketing.',printEst:40000,pri:'high',type:'new'},
+  {name:'Hyatt portfolio (Grand Hyatt / Andaz)',seg:'Hospitality & Tourism',opp:'Was $31k in 2024, now $0 in 2025. Re-engagement opportunity across 3 properties.',printEst:45000,pri:'high',type:'reactivation'},
+  {name:'Marriott Ko Olina / JW Marriott',seg:'Hospitality & Tourism',opp:'Marriott in system at $0 in 2025. Multiple Ko Olina properties, event packages.',printEst:38000,pri:'high',type:'reactivation'},
+  {name:'Aulani Disney Resort',seg:'Hospitality & Tourism',opp:'Disney Shared Svcs declining. Aulani-specific programs not captured. Kids marketing.',printEst:50000,pri:'high',type:'new'},
+  {name:'Ward Village (Howard Hughes Corp)',seg:'Real Estate & Property',opp:'Active condo project pipeline — sales packets, floor plans, buyer collateral.',printEst:35000,pri:'high',type:'new'},
+  {name:'Tripler / Hickam / JBPHH',seg:'Government & Military',opp:'Major base print needs — forms, directories, safety materials. Nearly nothing in system.',printEst:40000,pri:'high',type:'new'},
+  {name:'Safeway Hawaii / Albertsons',seg:'Retail & Consumer',opp:'Major grocery chain with EDDM, POS, and in-store graphics opportunity.',printEst:30000,pri:'medium',type:'new'},
+  {name:'Central Pacific Bank',seg:'Financial Services',opp:'Only $12k in 2025 — CPB has 30+ branches. Major growth opportunity vs peers.',printEst:32000,pri:'medium',type:'underserved'},
+  {name:'Grand Wailea Resort',seg:'Hospitality & Tourism',opp:'Was $60k in 2023, collapsed to $9k in 2025 — warm re-engagement with existing contacts.',printEst:42000,pri:'medium',type:'reactivation'},
+  {name:'Kaiser Permanente Hawaii',seg:'Healthcare & Life Sciences',opp:'Large health system. Member communications, wellness marketing, forms.',printEst:35000,pri:'medium',type:'new'},
+  {name:'Kamehameha Schools',seg:'Education, Nonprofit & Civic',opp:'Major educational institution with campuses statewide. Publications, events, recruitment.',printEst:28000,pri:'medium',type:'new'},
+  {name:'Hawaii Pacific Health (Pali Momi / Straub)',seg:'Healthcare & Life Sciences',opp:'Multi-hospital system. Zero on record despite scale.',printEst:30000,pri:'medium',type:'new'},
+  {name:'Alexander & Baldwin',seg:'Real Estate & Property',opp:'Largest private landowner in Maui. Development projects ongoing.',printEst:27000,pri:'medium',type:'new'},
+  {name:'Target / Foodland / Down to Earth',seg:'Retail & Consumer',opp:'Retail chains with local marketing needs — event signage, circular inserts.',printEst:25000,pri:'low',type:'new'},
+  {name:'Hawaii Convention Center (AEG)',seg:'Hospitality & Tourism',opp:'Convention center programming — event signage, wayfinding, sponsor materials.',printEst:30000,pri:'low',type:'new'},
+];
+
+function getSegPrintAvg(seg) {
+  const active = ACCOUNTS.filter(a => a.segment === seg && (a[yKey(yearB)]||0) > 25000);
+  if (!active.length) return 25000;
+  return Math.round(active.reduce((s,a)=>s+(a[yKey(yearB)]||0),0) / active.length);
 }
 
-// ─── WHITESPACE ──────────────────────────────────────────────────────────────
-const WHITESPACE = [
-  {name:'Sheraton Waikiki / Le Meridien / W Hotels',seg:'Hospitality',opp:'Largest hotel footprint in Hawaii — zero record',pri:'high'},
-  {name:'Hawaii Tourism Authority',seg:'Government',opp:'Was $283k in 2022. Fully dark since. Prime reactivation.',pri:'high'},
-  {name:'First Hawaiian Bank',seg:'Financial Services',opp:'$3.6k vs Bank of Hawaii $113k. FHB has 50+ branches.',pri:'high'},
-  {name:'Queens Medical Center',seg:'Healthcare',opp:'Largest private hospital in Hawaii. Zero record.',pri:'high'},
-  {name:'Hyatt portfolio (Grand Hyatt / Andaz)',seg:'Hospitality',opp:'Was $31k in 2024, now $0 in 2025. Recent churn.',pri:'high'},
-  {name:'Marriott Ko Olina / JW Marriott',seg:'Hospitality',opp:'Marriott in system but $0 in 2025. Multiple properties.',pri:'high'},
-  {name:'Aulani Disney Resort',seg:'Hospitality',opp:'Disney Shared Svcs declining. Aulani not in system.',pri:'high'},
-  {name:'Ward Village (residential)',seg:'Real Estate',opp:'HH Construction growing fast. Ward Village condos uncaptured.',pri:'high'},
-  {name:'Safeway Hawaii',seg:'Retail',opp:'Major grocery chain. EDDM, POS, in-store graphics opportunity.',pri:'med'},
-  {name:'Tripler / Hickam / JBPHH',seg:'Government',opp:'Large base print needs. Nearly nothing in system.',pri:'med'},
-  {name:'Central Pacific Bank',seg:'Financial Services',opp:'$12k 2025 — CPB has 30+ branches, Key Accounts candidate.',pri:'med'},
-  {name:'Grand Wailea Resort',seg:'Hospitality',opp:'Was $60k in 2023, collapsed to $9k — re-engagement.',pri:'med'},
-];
-function renderWhitespace() {
+function renderProspects() {
   if (!TABLE_SORT['dormant']) TABLE_SORT['dormant'] = { col: 'peak', dir: -1 };
 
-  // Whitespace static table (sortable by priority)
-  const wsSorted = TABLE_SORT['ws']?.col === 'pri'
-    ? [...WHITESPACE].sort((a,b) => TABLE_SORT['ws'].dir * (a.pri==='high'?-1:1) * (b.pri==='high'?-1:1) * -1)
-    : WHITESPACE;
-  const thW = (col,lbl) => `<th class="sortable" onclick="clickSort('ws','${col}',renderWhitespace)" style="white-space:nowrap">${lbl}${sortIcn('ws',col)}</th>`;
-  document.getElementById('ws-wrap').innerHTML = `<table>
-    <thead><tr><th>Brand / Account</th>${thW('seg','Segment')}<th>Opportunity</th>${thW('pri','Priority')}</tr></thead>
-    <tbody>${WHITESPACE.map(w=>`<tr><td style="font-weight:500">${w.name}</td><td>${pill(w.seg,'gray')}</td>
-      <td style="color:var(--muted);font-size:11px">${w.opp}</td>
-      <td>${w.pri==='high'?pill('High','red'):pill('Medium','amber')}</td></tr>`).join('')}</tbody></table>`;
+  // Low-spend existing accounts with growth potential (< $10k but avg segment spend > $25k)
+  const lowSpend = ACCOUNTS.filter(a => {
+    const vb = a[yKey(yearB)]||0;
+    return vb > 0 && vb < 10000 && a.segment !== 'Internal';
+  }).map(a => {
+    const segAvg = getSegPrintAvg(a.segment);
+    const est = Math.round(segAvg * 0.7);
+    return {...a, est, upside: est - (a[yKey(yearB)]||0)};
+  }).filter(a => a.est >= 25000)
+    .sort((a,b) => b.upside - a.upside).slice(0, 20);
 
-  // Dormant accounts — sortable
-  const dormantRaw = getAccounts().filter(a=>
-    (a.y2022>=20000||a.y2023>=20000) && a.y2024===0 && a.y2025===0
-  ).map(a=>{
-    const peak = Math.max(a.y2019,a.y2020,a.y2021,a.y2022,a.y2023);
-    const peakY = [2019,2020,2021,2022,2023].find(y=>a[yKey(y)]===peak)||'—';
-    const lastY = [2023,2022,2021,2020,2019].find(y=>a[yKey(y)]>0)||null;
-    return {...a, peak, peakY, lastY};
-  });
-  const dormant = sortArr(dormantRaw, 'dormant', { name:d=>d.name, ind:d=>d.industry, peakY:d=>d.peakY||0, peak:d=>d.peak, lastY:d=>d.lastY||0 }).slice(0,30);
-  const thD = (col,lbl) => `<th class="sortable" onclick="clickSort('dormant','${col}',renderWhitespace)" style="white-space:nowrap">${lbl}${sortIcn('dormant',col)}</th>`;
-  document.getElementById('dormant-wrap').innerHTML = `<table>
-    <thead><tr>${thD('name','Account')}${thD('ind','Industry')}${thD('peakY','Peak Year')}${thD('peak','Peak Revenue')}${thD('lastY','Last Active')}</tr></thead>
-    <tbody>${dormant.map(d=>`<tr><td style="font-weight:500">${d.name}</td><td style="color:var(--muted)">${d.industry}</td>
-      <td class="mono">${d.peakY}</td><td class="mono">${fmtK(d.peak)}</td>
-      <td class="mono">${d.lastY||'—'}</td></tr>`).join('')}</tbody></table>`;
+  const typeLabel = t => t==='new'?pill('New','blue'):t==='reactivation'?pill('Reactivation','amber'):pill('Underserved','gray');
+  const thW = (col,lbl) => `<th class="sortable" onclick="clickSort('ws','${col}',renderProspects)" style="white-space:nowrap">${lbl}${sortIcn('ws',col)}</th>`;
+  if (!TABLE_SORT['ws']) TABLE_SORT['ws'] = { col: 'pri', dir: -1 };
+  const wsSorted = sortArr(PROSPECTS_STATIC, 'ws', { pri:w=>w.pri==='high'?3:w.pri==='medium'?2:1, est:w=>w.printEst, name:w=>w.name });
+  document.getElementById('ws-wrap').innerHTML = `<table>
+    <thead><tr><th>Prospect</th>${thW('seg','Segment')}<th>Type</th><th>Opportunity</th>${thW('est','Est. Print Spend')}${thW('pri','Priority')}<th>Notes</th></tr></thead>
+    <tbody>${wsSorted.map(w=>{
+      const priKey='hb_pri_ws_'+w.name, noteKey='hb_note_ws_'+w.name;
+      const priVal=localStorage.getItem(priKey)||(w.pri==='high'?'high':w.pri==='medium'?'medium':'low');
+      const noteVal=(localStorage.getItem(noteKey)||'').replace(/"/g,'&quot;');
+      return `<tr>
+        <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.name}</td>
+        <td style="white-space:nowrap">${pill(w.seg,'gray')}</td>
+        <td>${typeLabel(w.type)}</td>
+        <td style="color:var(--muted);font-size:11px;max-width:200px">${w.opp}</td>
+        <td class="mono" style="color:var(--good)">~${fmtK(w.printEst)}</td>
+        <td><select class="pri-select pri-${priVal}" onchange="savePri('${priKey}',this)">
+          <option value="high" ${priVal==='high'?'selected':''}>High</option>
+          <option value="medium" ${priVal==='medium'?'selected':''}>Medium</option>
+          <option value="low" ${priVal==='low'?'selected':''}>Low</option>
+        </select></td>
+        <td><input class="note-input" value="${noteVal}" placeholder="Add note…" onchange="saveNote('${noteKey}',this)" onblur="saveNote('${noteKey}',this)"></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+
+  // Low-spend existing accounts
+  if (lowSpend.length > 0) {
+    const thL = (col,lbl) => `<th class="sortable" onclick="clickSort('lowspend','${col}',renderProspects)" style="white-space:nowrap">${lbl}${sortIcn('lowspend',col)}</th>`;
+    if (!TABLE_SORT['lowspend']) TABLE_SORT['lowspend'] = { col: 'upside', dir: -1 };
+    const lsSorted = sortArr(lowSpend, 'lowspend', { name:a=>a.name, seg:a=>a.segment, vb:a=>a[yKey(yearB)]||0, est:a=>a.est, upside:a=>a.upside, rep:a=>a.rep||'' });
+    document.getElementById('dormant-wrap').innerHTML = `
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Existing accounts spending &lt;$10k with segment peers averaging ≥$25k/yr — gap to address.</div>
+      <table>
+        <thead><tr><th>Account</th>${thL('rep','Rep')}${thL('seg','Segment')}${thL('vb','Current Spend')}${thL('est','Segment Avg')}${thL('upside','Upside')}<th>Priority</th><th>Notes</th></tr></thead>
+        <tbody>${lsSorted.map(a=>{
+          const priKey='hb_pri_ls_'+a.name, noteKey='hb_note_ls_'+a.name;
+          const priVal=localStorage.getItem(priKey)||'medium';
+          const noteVal=(localStorage.getItem(noteKey)||'').replace(/"/g,'&quot;');
+          return `<tr>
+            <td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</td>
+            <td style="color:var(--muted)">${a.rep||'—'}</td>
+            <td>${pill(a.segment||'—','gray')}</td>
+            <td class="mono">${fmtK(a[yKey(yearB)]||0)}</td>
+            <td class="mono" style="color:var(--muted)">${fmtK(a.est)}</td>
+            <td class="mono" style="color:var(--good)">+${fmtK(a.upside)}</td>
+            <td><select class="pri-select pri-${priVal}" onchange="savePri('${priKey}',this)">
+              <option value="high" ${priVal==='high'?'selected':''}>High</option>
+              <option value="medium" ${priVal==='medium'?'selected':''}>Medium</option>
+              <option value="low" ${priVal==='low'?'selected':''}>Low</option>
+            </select></td>
+            <td><input class="note-input" value="${noteVal}" placeholder="Add note…" onchange="saveNote('${noteKey}',this)" onblur="saveNote('${noteKey}',this)"></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  } else {
+    // Fallback: dormant accounts
+    const dormantRaw = getAccounts().filter(a=>
+      (a.y2022>=20000||a.y2023>=20000) && (a[yKey(yearB)]||0)===0 && (a[yKey(yearA)]||0)===0
+    ).map(a=>{
+      const peak = Math.max(a.y2019||0,a.y2020||0,a.y2021||0,a.y2022||0,a.y2023||0);
+      const peakY = [2019,2020,2021,2022,2023].find(y=>a[yKey(y)]===peak)||'—';
+      const lastY = [2023,2022,2021,2020,2019].find(y=>a[yKey(y)]>0)||null;
+      return {...a, peak, peakY, lastY};
+    });
+    const dormant = sortArr(dormantRaw, 'dormant', { name:d=>d.name, peak:d=>d.peak, lastY:d=>d.lastY||0 }).slice(0,30);
+    const thD = (col,lbl) => `<th class="sortable" onclick="clickSort('dormant','${col}',renderProspects)" style="white-space:nowrap">${lbl}${sortIcn('dormant',col)}</th>`;
+    document.getElementById('dormant-wrap').innerHTML = `<table>
+      <thead><tr>${thD('name','Account')}${thD('peakY','Peak Year')}${thD('peak','Peak Revenue')}${thD('lastY','Last Active')}</tr></thead>
+      <tbody>${dormant.map(d=>`<tr><td style="font-weight:500">${d.name}</td>
+        <td class="mono">${d.peakY}</td><td class="mono">${fmtK(d.peak)}</td>
+        <td class="mono">${d.lastY||'—'}</td></tr>`).join('')}</tbody></table>`;
+  }
 }
 
 // ─── REPS ─────────────────────────────────────────────────────────────────────
@@ -1109,25 +1297,34 @@ function renderRepDetail() {
       <div class="rep-stat"><div class="rep-stat-label">Attrition Risk</div><div class="rep-stat-val" style="color:${atrLost>0?'var(--bad)':'var(--good)'}">${atrLost>0?fmtK(atrLost):'$0'}</div></div>
     </div>
 
-    <div class="two-col" style="margin-bottom:16px;">
+    <div class="three-col" style="margin-bottom:16px;">
       <div>
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Revenue Trend 2019–2026</div>
         <div style="position:relative;height:190px;"><canvas id="rep-yoy-chart"></canvas></div>
       </div>
       <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Industry Mix — ${yLabel(yearA)} <span style="color:var(--dim)">vs</span> ${yLabel(yearB)}</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Segment Mix — ${yLabel(yearA)} <span style="color:var(--dim)">vs</span> ${yLabel(yearB)}</div>
         ${segSorted.slice(0,8).map(([s,v]) => {
           const vaS = segRevA[s]||0;
+          const shortS = s.length > 22 ? s.substring(0,20)+'…' : s;
           return `<div class="bar-row" style="margin-bottom:6px;">
-            <span class="bar-label" style="width:110px;font-size:11px;">${s}</span>
+            <span class="bar-label" style="width:110px;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s}">${shortS}</span>
             <div class="bar-track">
               <div class="bar-a" style="width:${(vaS/maxSegV*100).toFixed(0)}%;background:${SEG_COLORS[s]||'#888'};opacity:0.35;"></div>
               <div class="bar-b" style="width:${(v/maxSegV*100).toFixed(0)}%;background:${SEG_COLORS[s]||'#888'};opacity:0.8;"></div>
             </div>
-            <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;width:100px;text-align:right;">${fmtK(vaS)} → ${fmtK(v)}</span>
+            <span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;width:90px;text-align:right;">${fmtK(vaS)} → ${fmtK(v)}</span>
           </div>`;
         }).join('')}
       </div>
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Division Mix — ${yLabel(yearB)}</div>
+        <div id="rep-div-chart-wrap" style="position:relative;height:190px;"><canvas id="rep-div-chart"></canvas></div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px;font-weight:600;">Top 10 Accounts by ${yLabel(yearB)} Revenue</div>
+      <div style="position:relative;height:200px;"><canvas id="rep-top10-chart"></canvas></div>
     </div>
 
     ${atr.length > 0 ? `
@@ -1167,31 +1364,101 @@ function renderRepDetail() {
       </table></div>
     </div>`;
 
-  // Render Y-o-Y chart after DOM is updated
+  // Render charts after DOM is updated
   requestAnimationFrame(() => {
+    // Y-o-Y trend
     const canvas = document.getElementById('rep-yoy-chart');
-    if(!canvas) return;
-    if(repCharts.yoy) repCharts.yoy.destroy();
-    const yrs = [2019,2020,2021,2022,2023,2024,2025,2026];
-    const vals = yrs.map(y => repAccts.reduce((s,a) => s+(a[yKey(y)]||0), 0));
-    repCharts.yoy = new Chart(canvas, {
-      type: 'line',
-      data: { labels: yrs.map(yLabel), datasets:[{
-        label: 'Revenue', data: vals,
-        borderColor: '#E12B27', backgroundColor: 'rgba(225,43,39,0.07)',
-        fill: true, tension: 0.3, borderWidth: 2,
-        pointBackgroundColor: yrs.map(y => y===yearA?'#E12B27':y===yearB?'#FFCE02':'rgba(255,255,255,0.4)'),
-        pointRadius: yrs.map(y => y===yearA||y===yearB?6:3)
-      }]},
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>'  '+fmtK(c.parsed.y)}} },
-        scales: {
-          x: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88'} },
-          y: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88',callback:v=>fmtK(v)} }
+    if(canvas) {
+      if(repCharts.yoy) repCharts.yoy.destroy();
+      const yrs = [2019,2020,2021,2022,2023,2024,2025,2026];
+      const vals = yrs.map(y => repAccts.reduce((s,a) => s+(a[yKey(y)]||0), 0));
+      repCharts.yoy = new Chart(canvas, {
+        type: 'line',
+        data: { labels: yrs.map(yLabel), datasets:[{
+          label: 'Revenue', data: vals,
+          borderColor: '#E12B27', backgroundColor: 'rgba(225,43,39,0.07)',
+          fill: true, tension: 0.3, borderWidth: 2,
+          pointBackgroundColor: yrs.map(y => y===yearA?'#E12B27':y===yearB?'#FFCE02':'rgba(255,255,255,0.4)'),
+          pointRadius: yrs.map(y => y===yearA||y===yearB?6:3)
+        }]},
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>'  '+fmtK(c.parsed.y)}} },
+          scales: {
+            x: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88'} },
+            y: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88',callback:v=>fmtK(v)} }
+          }
         }
+      });
+    }
+
+    // Division mix (from DIVISIONS data for this rep's accounts)
+    const divCanvas = document.getElementById('rep-div-chart');
+    if(divCanvas && typeof DIVISIONS !== 'undefined') {
+      if(repCharts.div) repCharts.div.destroy();
+      const DIV_KEYS = ['CP','AEC','DP','HBMaui','Dispatch','Large Format'];
+      const DIV_COLORS_R = {CP:'#60a5fa',AEC:'#4ade80',DP:'#c084fc',HBMaui:'#34d399',Dispatch:'#94a3b8','Large Format':'#fbbf24'};
+      const repDivNames = new Set(repAccts.map(a=>a.name));
+      const divTotals = {};
+      DIV_KEYS.forEach(k=>divTotals[k]=0);
+      DIVISIONS.filter(d=>repDivNames.has(d.name)).forEach(d=>{
+        const yr = d.d2025||{};
+        DIV_KEYS.forEach(k=>{ divTotals[k]+=(yr[k]||0); });
+      });
+      const validDivs = DIV_KEYS.filter(k=>divTotals[k]>0);
+      if(validDivs.length > 0) {
+        repCharts.div = new Chart(divCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: validDivs,
+            datasets:[{ data: validDivs.map(k=>divTotals[k]),
+              backgroundColor: validDivs.map(k=>DIV_COLORS_R[k]||'#888'),
+              borderWidth: 0, hoverOffset: 4 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { position:'right', labels:{ color:'#ffffff88', boxWidth:10, font:{size:10}, padding:6 } },
+              tooltip: { callbacks: { label: c => ' '+c.label+': '+fmtK(c.parsed) } }
+            }
+          }
+        });
+      } else {
+        divCanvas.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:var(--dim)">No division data</div>';
       }
-    });
+    }
+
+    // Top 10 accounts
+    const top10Canvas = document.getElementById('rep-top10-chart');
+    if(top10Canvas) {
+      if(repCharts.top10) repCharts.top10.destroy();
+      const top10 = [...repAccts].filter(a=>(a[yKey(yearB)]||0)>0).sort((a,b)=>(b[yKey(yearB)]||0)-(a[yKey(yearB)]||0)).slice(0,10);
+      const shortName = n => n.length > 22 ? n.substring(0,20)+'…' : n;
+      repCharts.top10 = new Chart(top10Canvas, {
+        type: 'bar',
+        data: {
+          labels: top10.map(a=>shortName(a.name)),
+          datasets: [
+            { label: yLabel(yearA), data: top10.map(a=>a[yKey(yearA)]||0),
+              backgroundColor: 'rgba(225,43,39,0.4)', borderRadius:3, borderSkipped:false },
+            { label: yLabel(yearB), data: top10.map(a=>a[yKey(yearB)]||0),
+              backgroundColor: '#FFCE02bb', borderRadius:3, borderSkipped:false }
+          ]
+        },
+        options: {
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index' },
+          plugins: {
+            legend: { labels: { color:'#ffffff88', boxWidth:10, font:{size:10} } },
+            tooltip: { callbacks: { label: c => '  '+c.dataset.label+': '+fmtK(c.parsed.x) } }
+          },
+          scales: {
+            x: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#ffffff88',callback:v=>fmtK(v)} },
+            y: { grid:{display:false}, ticks:{color:'#ffffff88',font:{size:10}} }
+          }
+        }
+      });
+    }
   });
 }
 
@@ -1256,6 +1523,16 @@ function filterByRep(rep) {
   renderAccounts();
 }
 
+
+// ─── PRIORITY & NOTE PERSISTENCE ─────────────────────────────────────────────
+function savePri(key, sel) {
+  localStorage.setItem(key, sel.value);
+  sel.className = 'pri-select pri-' + sel.value;
+}
+function saveNote(key, inp) {
+  localStorage.setItem(key, inp.value);
+}
+
 // ─── PASSWORD ────────────────────────────────────────────────────────────────
 function checkPassword() {
   const input = document.getElementById('lock-input').value;
@@ -1282,39 +1559,73 @@ function initAuth() {
 }
 
 // ─── DATA UPLOAD ─────────────────────────────────────────────────────────────
-// Maps every raw Industry value in the NAV sheet to a dashboard segment
+// Maps Industry values (old and new) to dashboard segments
 const INDUSTRY_SEG_MAP = {
-  // AEC
-  'Architect Firm':'AEC','General Contractor':'AEC','Subcontractor':'AEC',
-  'Engineering Firm-Multi Discipline':'AEC','Engineering Firm-Other':'AEC',
-  'Engineering Firm-Civil':'AEC','Engineering Firm-Structural':'AEC',
-  'Engineering Firm-Mechanical':'AEC','Engineering Firm-Electrical':'AEC',
-  'Construction Manager':'AEC','Landscape Architect':'AEC','Interior Design':'AEC',
-  'Planners':'AEC','Reprographics':'AEC','Facilities':'AEC',
-  // Hospitality
-  'Hotels/Resorts':'Hospitality','Travel/Airline/Destination Management':'Hospitality',
-  'Leisure':'Hospitality','Entertainment/Theatre/Promoters/Musicians':'Hospitality',
-  'Clubs/Organizations/Professional Associations':'Hospitality',
-  // Retail
-  'Retail/Furniture/Car Dealerships':'Retail',
-  // Real Estate
-  'Developers':'Real Estate','Property Management/Condo Associations':'Real Estate',
-  'Real Estate - Residential':'Real Estate','Real Estate - Commercial':'Real Estate',
-  'Real Estate Commercial':'Real Estate','Real Estate Residential':'Real Estate',
-  'Large Land Owner':'Real Estate','Appraiser':'Real Estate',
-  // Food & Beverage
-  'Food':'Food & Beverage','Restaurant':'Food & Beverage',
-  // Financial Services
+  // ── New taxonomy (pass-through after reclassification) ──
+  'Architecture, Engineering & Construction (AEC)': 'Architecture, Engineering & Construction (AEC)',
+  'Education, Nonprofit & Civic': 'Education, Nonprofit & Civic',
+  'Retail & Consumer': 'Retail & Consumer',
+  'Media, Marketing & Creative': 'Media, Marketing & Creative',
+  'Real Estate & Property': 'Real Estate & Property',
+  'Hospitality & Tourism': 'Hospitality & Tourism',
+  'Food & Beverage': 'Food & Beverage',
+  'Manufacturing, Logistics & Industrial': 'Manufacturing, Logistics & Industrial',
+  'Professional Services & Technology': 'Professional Services & Technology',
+  'Healthcare & Life Sciences': 'Healthcare & Life Sciences',
+  'Print & Reprographics': 'Print & Reprographics',
+  'Government & Military': 'Government & Military',
+  'Financial Services': 'Financial Services',
+  'Internal': 'Internal',
+  'Other': 'Other',
+  // ── Legacy taxonomy (backwards compat for old Excel files) ──
+  'Architect Firm':'Architecture, Engineering & Construction (AEC)',
+  'General Contractor':'Architecture, Engineering & Construction (AEC)',
+  'Subcontractor':'Architecture, Engineering & Construction (AEC)',
+  'Engineering Firm-Multi Discipline':'Architecture, Engineering & Construction (AEC)',
+  'Engineering Firm-Other':'Architecture, Engineering & Construction (AEC)',
+  'Engineering Firm-Civil':'Architecture, Engineering & Construction (AEC)',
+  'Engineering Firm-Structural':'Architecture, Engineering & Construction (AEC)',
+  'Engineering Firm-Mechanical':'Architecture, Engineering & Construction (AEC)',
+  'Engineering Firm-Electrical':'Architecture, Engineering & Construction (AEC)',
+  'Construction Manager':'Architecture, Engineering & Construction (AEC)',
+  'Landscape Architect':'Architecture, Engineering & Construction (AEC)',
+  'Interior Design':'Media, Marketing & Creative',
+  'Planners':'Architecture, Engineering & Construction (AEC)',
+  'Reprographics':'Print & Reprographics',
+  'Facilities':'Manufacturing, Logistics & Industrial',
+  'Developers':'Architecture, Engineering & Construction (AEC)',
+  'Hotels/Resorts':'Hospitality & Tourism',
+  'Travel/Airline/Destination Management':'Hospitality & Tourism',
+  'Leisure':'Retail & Consumer',
+  'Entertainment/Theatre/Promoters/Musicians':'Retail & Consumer',
+  'Clubs/Organizations/Professional Associations':'Education, Nonprofit & Civic',
+  'Retail/Furniture/Car Dealerships':'Retail & Consumer',
+  'Property Management/Condo Associations':'Real Estate & Property',
+  'Real Estate - Residential':'Real Estate & Property',
+  'Real Estate - Commercial':'Real Estate & Property',
+  'Real Estate Commercial':'Real Estate & Property',
+  'Real Estate Residential':'Real Estate & Property',
+  'Large Land Owner':'Real Estate & Property',
+  'Appraiser':'Professional Services & Technology',
+  'Food':'Food & Beverage',
+  'Restaurant':'Food & Beverage',
   'Financial Institutions':'Financial Services',
-  // Government
-  'State Agency':'Government','City and County Agency':'Government',
-  'Federal Agency':'Government','Military Agency':'Government',
-  // Nonprofit
-  'Nonprofit':'Nonprofit','Religious':'Nonprofit',
-  // Healthcare
-  'Medical/Healthcare':'Healthcare',
-  // Education
-  'Education':'Education',
+  'State Agency':'Government & Military',
+  'City and County Agency':'Government & Military',
+  'Federal Agency':'Government & Military',
+  'Military Agency':'Government & Military',
+  'Nonprofit':'Education, Nonprofit & Civic',
+  'Religious':'Education, Nonprofit & Civic',
+  'Education':'Education, Nonprofit & Civic',
+  'Medical/Healthcare':'Healthcare & Life Sciences',
+  'Technology/Information Systems':'Professional Services & Technology',
+  'Professional Services':'Professional Services & Technology',
+  'Offset Printing':'Print & Reprographics',
+  'Print/Publish':'Print & Reprographics',
+  'Manufacturing':'Manufacturing, Logistics & Industrial',
+  'Transport/Cargo/Shipping/Courier':'Manufacturing, Logistics & Industrial',
+  'Supplier':'Manufacturing, Logistics & Industrial',
+  'Advertising/Communications/Design/Marketing':'Media, Marketing & Creative',
 };
 function industryToSeg(ind) { return INDUSTRY_SEG_MAP[ind] || 'Other'; }
 
@@ -1359,17 +1670,97 @@ function handleFileUpload(input) {
 
       if(ci.name < 0) { showToast('Could not find "Customer Name" column.', true); return; }
 
-      const parsed = raw.slice(1).map(row => {
-        const name = String(row[ci.name] || '').trim();
-        if(!name) return null;
-        const industry = String(row[ci.industry] ?? '');
-        const rep = String(row[ci.rep] ?? '');
-        const acct = { name, industry, rep, segment: industryToSeg(industry) };
-        [2019,2020,2021,2022,2023,2024,2025,2026].forEach(y => {
-          acct['y'+y] = yearCols[y] !== undefined ? (parseFloat(row[yearCols[y]]) || 0) : 0;
+      // Detect new Master Account format (header row has 'Master Account' in col 0)
+      // New format: header is in row index 2 (raw[2]), with Master Account, ID, Customer Name, Industry, CRM Primary, then division cols
+      let dataRows = raw.slice(1);
+      let hasMasterCol = false;
+      let masterIdx = -1, idIdx = -1;
+
+      // Try to find the real header row
+      for (let ri = 0; ri < Math.min(5, raw.length); ri++) {
+        const r = raw[ri];
+        if (r && String(r[0]||'').trim() === 'Master Account') {
+          masterIdx = 0; idIdx = 1;
+          // Recalculate ci from this row
+          const hdr = r.map(h => String(h||'').trim());
+          ci.name = hdr.findIndex(h => h.toLowerCase().includes('customer name'));
+          ci.industry = hdr.findIndex(h => h === 'Industry');
+          ci.rep = hdr.findIndex(h => h.toLowerCase().includes('crm') || h.toLowerCase() === 'rep');
+          // Year total columns: look for numeric year in row above (ri-1)
+          if (ri > 0) {
+            const yearRow = raw[ri-1] || [];
+            let curYear = null;
+            yearRow.forEach((cell, colIdx) => {
+              const yr = parseInt(String(cell||''));
+              if (yr >= 2019 && yr <= 2026) curYear = yr;
+              if (curYear && hdr[colIdx] === 'Total') {
+                if (!yearCols[curYear]) yearCols[curYear] = colIdx;
+              }
+            });
+          }
+          dataRows = raw.slice(ri + 1);
+          hasMasterCol = true;
+          break;
+        }
+      }
+
+      let parsed;
+      if (hasMasterCol && masterIdx >= 0) {
+        // Group by Master Account
+        const groups = {};
+        dataRows.forEach(row => {
+          if (!row || !row[masterIdx]) return;
+          const master = String(row[masterIdx]).trim();
+          if (!master) return;
+          if (!groups[master]) {
+            groups[master] = {
+              name: master,
+              subNames: [],
+              subIds: [],
+              industry: String(row[ci.industry] ?? ''),
+              rep: String(row[ci.rep] ?? ''),
+              revenues: {}
+            };
+          }
+          const g = groups[master];
+          const cname = String(row[ci.name] ?? '').trim();
+          const cid = String(row[idIdx] ?? '').trim();
+          if (cname && !g.subNames.includes(cname)) g.subNames.push(cname);
+          if (cid && !g.subIds.includes(cid)) g.subIds.push(cid);
+          [2019,2020,2021,2022,2023,2024,2025,2026].forEach(y => {
+            if (yearCols[y] !== undefined) {
+              g.revenues[y] = (g.revenues[y] || 0) + (parseFloat(row[yearCols[y]]) || 0);
+            }
+          });
         });
-        return acct;
-      }).filter(Boolean);
+        parsed = Object.values(groups).map(g => {
+          const acct = {
+            name: g.name,
+            subAccounts: g.subNames.join(', '),
+            subIds: g.subIds.join(', '),
+            industry: g.industry,
+            rep: g.rep,
+            segment: industryToSeg(g.industry)
+          };
+          [2019,2020,2021,2022,2023,2024,2025,2026].forEach(y => {
+            acct['y'+y] = g.revenues[y] || 0;
+          });
+          return acct;
+        }).filter(a => a.name);
+      } else {
+        // Legacy format
+        parsed = dataRows.map(row => {
+          const name = String(row[ci.name] || '').trim();
+          if(!name) return null;
+          const industry = String(row[ci.industry] ?? '');
+          const rep = String(row[ci.rep] ?? '');
+          const acct = { name, industry, rep, segment: industryToSeg(industry) };
+          [2019,2020,2021,2022,2023,2024,2025,2026].forEach(y => {
+            acct['y'+y] = yearCols[y] !== undefined ? (parseFloat(row[yearCols[y]]) || 0) : 0;
+          });
+          return acct;
+        }).filter(Boolean);
+      }
 
       if(parsed.length < 100) { showToast(`Only ${parsed.length} rows found — is this the right sheet?`, true); return; }
 
@@ -1415,7 +1806,7 @@ function showToast(msg, isError=false) {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-initYearPills();
+initYearSelects();
 initAuth();
 
 // Restore previously uploaded data from localStorage (survives page refresh)
