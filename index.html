@@ -346,7 +346,7 @@
 
     <!-- DIVISIONS -->
     <div id="pane-divisions" class="pane">
-      <div class="notice">Division-level data (AEC, CP, DP, Large Format, etc.) is available for 2024–2025. Historical totals use account-level data.</div>
+      <div class="notice">Division-level data available for 2024–2026. Large Format = formerly LFG (Large Format Graphics). Historical totals use account-level data.</div>
       <div class="panel">
         <div class="panel-header"><div class="panel-title">Division revenue 2024 vs 2025</div></div>
         <div class="panel-body" id="div-bars"></div>
@@ -553,13 +553,38 @@ function pill(txt, cls) { return `<span class="pill pill-${cls}">${txt}</span>`;
 
 // ─── DIVISION FILTER & SORT HELPERS ─────────────────────────────────────────
 let _divMap = null;
+// Normalise legacy LFG key → Large Format (and other aliases) so old & new
+// Excel uploads always resolve to the canonical key used throughout the UI.
+const DIV_ALIAS = {
+  'LFG': 'Large Format',
+  'Large Format Graphic': 'Large Format',
+  'Large Format Graphics': 'Large Format',
+  'Onsites + Other': 'Other',
+  'Onsites+Other': 'Other',
+  'Commercial Printing': 'CP',
+  'Digital Printing': 'DP',
+  'HB Maui': 'HBMaui',
+};
+function normDiv(key) { return DIV_ALIAS[key] || key; }
+
+// Normalise all keys in a division year object
+function normDivObj(obj) {
+  if (!obj) return {};
+  const out = {};
+  Object.entries(obj).forEach(([k, v]) => {
+    const nk = normDiv(k);
+    out[nk] = (out[nk] || 0) + (v || 0);
+  });
+  return out;
+}
+
 function getDivMap() {
   if (_divMap) return _divMap;
   _divMap = {};
   try {
     if (typeof DIVISIONS !== 'undefined') {
       DIVISIONS.forEach(d => {
-        const yr = d.d2025 || {};
+        const yr = normDivObj(d.d2025 || {});
         const divs = Object.entries(yr).filter(([k,v]) => v > 0 && k !== 'Other');
         _divMap[d.name] = divs.sort((a,b) => b[1]-a[1])[0]?.[0] || 'Other';
       });
@@ -807,7 +832,8 @@ function renderDivisions() {
   const div24={}, div25={};
   DIV_ORDER.forEach(d=>{div24[d]=0;div25[d]=0;});
   DIVISIONS.forEach(d=>{
-    DIV_ORDER.forEach(k=>{ div24[k]+=(d.d2024?d.d2024[k]||0:0); div25[k]+=(d.d2025?d.d2025[k]||0:0); });
+    const n24 = normDivObj(d.d2024||{}), n25 = normDivObj(d.d2025||{});
+    DIV_ORDER.forEach(k=>{ div24[k]+=(n24[k]||0); div25[k]+=(n25[k]||0); });
   });
   const maxDiv = Math.max(...DIV_ORDER.map(d=>Math.max(div24[d],div25[d])));
   document.getElementById('div-bars').innerHTML = DIV_ORDER.map(d=>{
@@ -832,7 +858,7 @@ function renderDivisions() {
     {d:'AEC',c:'#4ade80',note:'Project-driven. Tied to active construction activity; ebbs with project cadence.'},
     {d:'HBMaui',c:'#34d399',note:'Stable. Maui market holding with consistent client base.'},
     {d:'Dispatch',c:'#94a3b8',note:'Growing as delivery frequency increases across accounts.'},
-    {d:'Large Format',c:'#fbbf24',note:'Signage, banners, wide-format prints. Growing with real estate and retail.'},
+    {d:'Large Format',c:'#fbbf24',note:'Wide-format: banners, signage, blueprints (previously labelled LFG). Growing with real estate and retail.'},
   ].map(x=>`<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
     <div style="width:32px;height:28px;background:${x.c}22;border:1px solid ${x.c}44;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${x.c};flex-shrink:0;text-align:center;padding:2px;">${x.d}</div>
     <div><div style="font-size:12px;font-weight:500;margin-bottom:2px;">${x.d}</div><div style="font-size:11px;color:var(--muted);line-height:1.5;">${x.note}</div></div>
@@ -841,12 +867,13 @@ function renderDivisions() {
   // Top accounts by total division revenue in compare year
   if (!TABLE_SORT['div-top']) TABLE_SORT['div-top'] = { col: 'v25', dir: -1 };
   const divTopRaw = [...DIVISIONS].filter(d=>{
-    const tot = Object.values(d.d2025||{}).reduce((s,v)=>s+(v||0),0);
-    return tot > 5000;
+    const n25 = normDivObj(d.d2025||{});
+    return Object.values(n25).reduce((s,v)=>s+(v||0),0) > 5000;
   }).map(d=>{
-    const v24 = Object.values(d.d2024||{}).reduce((s,v)=>s+(v||0),0);
-    const v25 = Object.values(d.d2025||{}).reduce((s,v)=>s+(v||0),0);
-    const topDiv = Object.entries(d.d2025||{}).filter(([k])=>k!=='Other').sort((a,b)=>b[1]-a[1])[0]?.[0]||'Other';
+    const n24 = normDivObj(d.d2024||{}), n25 = normDivObj(d.d2025||{});
+    const v24 = Object.values(n24).reduce((s,v)=>s+(v||0),0);
+    const v25 = Object.values(n25).reduce((s,v)=>s+(v||0),0);
+    const topDiv = Object.entries(n25).filter(([k])=>k!=='Other').sort((a,b)=>b[1]-a[1])[0]?.[0]||'Other';
     return {...d, v24, v25, topDiv};
   });
   const divTop = sortArr(divTopRaw, 'div-top', { name:d=>d.name, v24:d=>d.v24, v25:d=>d.v25, chg:d=>d.v25-d.v24 }).slice(0,15);
@@ -913,9 +940,10 @@ function renderTrends() {
   const divTotals24 = {}, divTotals25 = {};
   DIV_ORDER_T.forEach(d=>{divTotals24[d]=0;divTotals25[d]=0;});
   (typeof DIVISIONS !== 'undefined' ? DIVISIONS : []).forEach(d=>{
+    const n24 = normDivObj(d.d2024||{}), n25 = normDivObj(d.d2025||{});
     DIV_ORDER_T.forEach(k=>{
-      divTotals24[k]+=(d.d2024?d.d2024[k]||0:0);
-      divTotals25[k]+=(d.d2025?d.d2025[k]||0:0);
+      divTotals24[k]+=(n24[k]||0);
+      divTotals25[k]+=(n25[k]||0);
     });
   });
   if(trendCharts.div) trendCharts.div.destroy();
@@ -1402,7 +1430,7 @@ function renderRepDetail() {
       const divTotals = {};
       DIV_KEYS.forEach(k=>divTotals[k]=0);
       DIVISIONS.filter(d=>repDivNames.has(d.name)).forEach(d=>{
-        const yr = d.d2025||{};
+        const yr = normDivObj(d.d2025||{});
         DIV_KEYS.forEach(k=>{ divTotals[k]+=(yr[k]||0); });
       });
       const validDivs = DIV_KEYS.filter(k=>divTotals[k]>0);
